@@ -107,9 +107,12 @@ textarea.input{min-height:84px;resize:vertical}
 .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;margin-inline:-2px;padding-inline:2px}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 13px;font-size:.86rem;font-weight:500;white-space:nowrap}
+.chip-n{font-size:.72rem;opacity:.6;margin-left:2px}
 .chip[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:var(--on-brand)}
-.filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.filters select{font-size:.85rem;padding:8px 10px;min-height:40px}
+.filters{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.filters::-webkit-scrollbar{display:none}
+.filters select{flex:none;width:auto;font-size:.85rem;padding:8px 30px 8px 12px;min-height:38px;border-radius:999px;font-weight:500}
+.filters select.on{border-color:var(--brand);background:var(--brand-soft);color:var(--brand-ink)}
 
 .tag{display:inline-flex;align-items:center;gap:4px;font-size:.75rem;font-weight:600;padding:3px 8px;border-radius:999px;background:var(--surface-2);color:var(--muted)}
 .tag.ok{background:var(--brand-soft);color:var(--brand-ink)}
@@ -118,6 +121,12 @@ textarea.input{min-height:84px;resize:vertical}
 .tag.danger{background:var(--danger-soft);color:var(--danger)}
 .tag svg{width:13px;height:13px}
 
+.quick-acts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.quick-acts button{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:12px 10px;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;box-shadow:var(--shadow)}
+.quick-acts b{font-size:.86rem;margin-top:6px}
+.quick-acts small{font-size:.74rem;color:var(--muted)}
+.upsell{display:flex;gap:12px;align-items:center;border-radius:16px;padding:14px;background:var(--brand-soft);border:1px solid transparent;text-align:left;width:100%}
+.upsell b{color:var(--brand-ink)}
 .trust{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .trust div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px;font-size:.78rem;line-height:1.3;color:var(--muted)}
 .trust svg{width:20px;height:20px;color:var(--brand)}
@@ -126,13 +135,20 @@ textarea.input{min-height:84px;resize:vertical}
 .avatar{flex:none;width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:1rem;color:#fff}
 .avatar.lg{width:72px;height:72px;border-radius:22px;font-size:1.4rem}
 .avatar.sm{width:40px;height:40px;border-radius:12px;font-size:.85rem}
-.doc{display:flex;flex-direction:column;gap:12px;cursor:pointer;text-align:left;width:100%}
+.doc{display:flex;flex-direction:column;gap:12px;text-align:left;width:100%}
+.doc-hit{all:unset;display:flex;flex-direction:column;gap:12px;cursor:pointer;border-radius:10px}
+.doc-hit:focus-visible{outline:2px solid var(--brand);outline-offset:4px}
+.quick{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.qslot{border:1px solid var(--line);background:var(--brand-soft);color:var(--brand-ink);border-radius:10px;padding:6px 2px;font-weight:700;font-size:.88rem;display:flex;flex-direction:column;align-items:center;line-height:1.15}
+.qslot small{font-size:.66rem;font-weight:500;opacity:.85}
+.qslot.more{background:var(--surface);color:var(--ink);font-weight:600;font-size:.8rem}
+.qslot:hover{border-color:var(--brand)}
 .doc-top{display:flex;gap:12px;align-items:flex-start}
 .doc-main{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px}
 .doc-name{display:flex;align-items:center;gap:5px;font-weight:700;font-size:1rem}
 .doc-name svg{width:16px;height:16px;color:var(--blue);flex:none}
 .doc-meta{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:.84rem;color:var(--muted)}
-.doc-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px dashed var(--line);padding-top:10px}
+.doc-foot{display:flex;flex-direction:column;gap:8px;border-top:1px dashed var(--line);padding-top:10px}
 .price{font-weight:700;font-size:1rem}
 .stars{color:#E2A100;font-weight:700}
 .next{font-size:.82rem;color:var(--brand-ink);font-weight:600}
@@ -225,6 +241,11 @@ textarea.input{min-height:84px;resize:vertical}
 .opt:has(input:checked){border-color:var(--brand);background:var(--brand-soft)}
 .opt:has(input:disabled){opacity:.55;cursor:not-allowed}
 
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.steps li{display:flex;align-items:center;gap:6px;font-size:.78rem;font-weight:600;color:var(--muted);padding-top:8px;border-top:3px solid var(--line)}
+.steps li span{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:.7rem;background:var(--surface-2)}
+.steps li.now,.steps li.done{color:var(--brand-ink);border-color:var(--brand)}
+.steps li.now span,.steps li.done span{background:var(--brand);color:var(--on-brand)}
 .hero-ok{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:10px 0}
 .hero-ok .ring{width:72px;height:72px;border-radius:50%;background:var(--brand-soft);display:grid;place-items:center;color:var(--brand)}
 .hero-ok svg{width:36px;height:36px}
@@ -245,7 +266,7 @@ textarea.input{min-height:84px;resize:vertical}
 .stat b{font-family:var(--f-display);font-size:1.4rem}
 .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 
-.toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:12px;font-weight:600;font-size:.9rem;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
+.toast{position:fixed;left:50%;top:calc(64px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:12px;font-weight:600;font-size:.9rem;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
 .splash{min-height:70vh;display:grid;place-items:center;text-align:center}
 .splash .logo-full{animation:pulse 1.6s ease-in-out infinite}
 @keyframes pulse{50%{opacity:.6}}
@@ -255,7 +276,7 @@ textarea.input{min-height:84px;resize:vertical}
 .note{display:flex;gap:10px;align-items:flex-start;background:var(--blue-soft);color:var(--ink);border-radius:12px;padding:12px;font-size:.86rem}
 .note svg{width:18px;height:18px;color:var(--blue);flex:none;margin-top:2px}
 .section-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
-@media (max-width:380px){.filters{grid-template-columns:1fr 1fr}.filters select:last-child{grid-column:1/-1}.slots{grid-template-columns:repeat(3,minmax(0,1fr))}.trust{grid-template-columns:1fr}}
+@media (max-width:380px){.slots{grid-template-columns:repeat(3,minmax(0,1fr))}.trust{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -266,7 +287,7 @@ textarea.input{min-height:84px;resize:vertical}
         <span class="logo-iso" style="width:36px;height:32px"></span>
         <span class="wordmark" style="font-size:.95rem">Health Digital</span>
       </div>
-      <span class="demo-pill" id="modePill">Versión demo</span>
+      <span class="demo-pill" id="modePill">Demo</span>
     </div>
   </header>
   <main id="view" aria-live="polite">
@@ -545,8 +566,7 @@ function start(store){
   if(ST&&ST.stop) ST.stop();
   ST=store; S.store=store; S.ready=false; S.perfil=undefined; S.citas=[]; S.tab='descubrir';
   const pill=$('#modePill');
-  if(store.modo==='supabase'){pill.textContent='Demo';pill.hidden=!CONFIG.DEMO}
-  else pill.textContent = store.modo==='nube' ? 'Demo · sincronizado' : 'Demo · en este dispositivo';
+  pill.textContent='Demo'; pill.title = store.modo==='local' ? 'Los datos se guardan en este dispositivo' : 'Datos sincronizados de forma privada'; pill.hidden = store.modo==='supabase' && !CONFIG.DEMO;
   let pending=4; const done=()=>{if(--pending===0){S.ready=true;render()}};
   let first={p:true,c:true,o:true,r:true};
   store.onPerfil(p=>{S.perfil=p; if(first.p){first.p=false;done()} else render()});
@@ -650,19 +670,22 @@ function filtrarDoctores(){
   else r.sort((a,b)=>p(a)-p(b));
   return r;
 }
+function proximosLibres(doc,n){const out=[];for(const f of proximosDias(14)){for(const h of libresDe(doc,f)){out.push({fecha:f,hora:h});if(out.length>=n) return out}}return out}
 function docCard(d){
-  const c=calif(d.id), x=proxima(d);
-  return `<button class="card elev doc" data-act="doctor" data-v="${d.id}">
+  const c=calif(d.id), libres=proximosLibres(d,4);
+  return `<article class="card elev doc">
+    <button class="doc-hit" data-act="doctor" data-v="${d.id}" aria-label="Ver perfil de ${esc(d.nombre)}">
     <div class="doc-top">${avatar(d)}
       <div class="doc-main">
         <span class="doc-name">${esc(d.nombre)} <span title="Cédula verificada">${I.verified}</span></span>
         <span class="muted small">${esc(d.esp)} · ${d.exp} años de experiencia</span>
-        <span class="doc-meta"><span>${c?`<span class="stars">★ ${c.prom.toFixed(1)}</span> (${c.n} ${c.n===1?'opinión':'opiniones'})`:'<span class="tag">Nuevo en Health Digital</span>'}</span><span>${esc(d.zona)} · ${d.km} km</span></span>
+        <span class="doc-meta">${c?`<span><span class="stars">★ ${c.prom.toFixed(1)}</span> (${c.n})</span>`:''}<span>${esc(d.zona)} · ${d.km} km</span><span class="price num">${money(d.precio)}</span></span>
       </div>
     </div>
     <div class="row wrap" style="gap:6px">${d.modos.includes('Videoconsulta')?`<span class="tag blue">${I.video} Videoconsulta</span>`:''}${d.seguros.slice(0,3).map(s=>`<span class="tag">${esc(s)}</span>`).join('')}</div>
-    <div class="doc-foot"><span class="next">${x?`Próxima: ${relDia(x.fecha)} ${x.hora}`:'Sin horarios esta semana'}</span><span class="price num">${money(d.precio)}</span></div>
-  </button>`;
+    </button>
+    <div class="doc-foot">${libres.length?`<span class="small muted">Próximos horarios</span><div class="quick">${libres.map(x=>`<button class="qslot num" data-act="rapido" data-v="${d.id}|${x.fecha}|${x.hora}"><small>${esc(relDia(x.fecha))}</small>${x.hora}</button>`).join('')}<button class="qslot more" data-act="doctor" data-v="${d.id}">Más<small>horarios</small></button></div>`:'<span class="small muted">Sin horarios en las próximas 2 semanas</span>'}</div>
+  </article>`;
 }
 function resultsHTML(){
   const r=filtrarDoctores();
@@ -677,13 +700,19 @@ function viewDescubrir(){
   ${prox?`<button class="card row" data-act="tab" data-v="citas" style="text-align:left;background:var(--brand-soft);border-color:transparent">
       <div class="li-ic" style="background:var(--surface)">${I.cal}</div>
       <div class="grow" style="min-width:0;flex:1"><b>Tu próxima cita: ${relDia(prox.fecha)}, ${prox.hora}</b><p class="small muted">${esc(docById(prox.doctorId)?.nombre)} · ${esc(prox.modalidad)}</p></div>${I.chev}</button>`:''}
+  <div class="quick-acts">
+    <button data-act="soloVideo"><span class="li-ic">${I.video}</span><b>Videoconsulta</b><small>Desde tu casa</small></button>
+    <button data-act="tab" data-v="servicios"><span class="li-ic">${I.services}</span><b>Estudios</b><small>Labs e imagen</small></button>
+    <button data-act="tab" data-v="membresia"><span class="li-ic">${I.card}</span><b>${S.perfil.plan?'Mi credencial':'Membresía'}</b><small>${S.perfil.plan?'Lista para usar':'Desde $300/mes'}</small></button>
+  </div>
   <div class="chips" role="group" aria-label="Especialidad">${ESPECIALIDADES.map(e=>`<button class="chip" data-act="esp" data-v="${esc(e)}" aria-pressed="${S.f.esp===e}">${esc(e)}</button>`).join('')}</div>
   <div class="filters">
-    <select class="input" id="f-seguro" aria-label="Seguro"><option value="">Seguro: todos</option>${SEGUROS.map(s=>`<option ${S.f.seguro===s?'selected':''}>${esc(s)}</option>`).join('')}</select>
-    <select class="input" id="f-modo" aria-label="Modalidad"><option value="">Modalidad</option><option value="Videoconsulta" ${S.f.modo==='Videoconsulta'?'selected':''}>Videoconsulta</option><option value="Presencial" ${S.f.modo==='Presencial'?'selected':''}>Consultorio</option></select>
-    <select class="input" id="f-orden" aria-label="Ordenar"><option value="recomendados">Más pronto</option><option value="distancia" ${S.f.orden==='distancia'?'selected':''}>Más cerca</option><option value="precio" ${S.f.orden==='precio'?'selected':''}>Menor precio</option><option value="calificacion" ${S.f.orden==='calificacion'?'selected':''}>Mejor calificados</option></select>
+    <select class="input ${S.f.seguro?'on':''}" id="f-seguro" aria-label="Seguro"><option value="">Cualquier seguro</option>${SEGUROS.map(s=>`<option ${S.f.seguro===s?'selected':''}>${esc(s)}</option>`).join('')}</select>
+    <select class="input ${S.f.modo?'on':''}" id="f-modo" aria-label="Modalidad"><option value="">Presencial o en línea</option><option value="Videoconsulta" ${S.f.modo==='Videoconsulta'?'selected':''}>Videoconsulta</option><option value="Presencial" ${S.f.modo==='Presencial'?'selected':''}>Consultorio</option></select>
+    <select class="input" id="f-orden" aria-label="Ordenar"><option value="recomendados">Ordenar: disponibles antes</option><option value="distancia" ${S.f.orden==='distancia'?'selected':''}>Más cerca</option><option value="precio" ${S.f.orden==='precio'?'selected':''}>Menor precio</option><option value="calificacion" ${S.f.orden==='calificacion'?'selected':''}>Mejor calificados</option></select>
   </div>
   <div class="stack" id="results">${resultsHTML()}</div>
+  ${S.perfil.plan?'':`<button class="upsell" data-act="tab" data-v="membresia"><span class="logo-iso" style="width:40px;height:36px"></span><span style="flex:1;min-width:0"><b>Consultas incluidas desde $300 al mes</b><span class="small muted" style="display:block">Agenda preferente, credencial digital y 15% en estudios.</span></span>${I.chev}</button>`}
   <div class="trust">${trustHTML()}</div>`;
 }
 
@@ -849,10 +878,11 @@ function slotsHTML(d,s){
   if(!hs.length) return `<p class="muted small">No hay consulta este día. Elige otra fecha.</p>`;
   return `<div class="slots">${hs.map(h=>{const ok=libre(d,s.fecha,h);return `<button class="slot num" data-act="hora" data-v="${h}" ${ok?'':'disabled aria-label="'+h+' ocupado"'} aria-pressed="${s.hora===h}">${h}</button>`}).join('')}</div>`;
 }
+function pasos(n){const t=['Horario','Confirmar','Listo'];return `<ol class="steps" aria-label="Paso ${n} de 3">${t.map((x,i)=>`<li class="${i+1<n?'done':i+1===n?'now':''}"><span>${i+1<n?'✓':i+1}</span>${x}</li>`).join('')}</ol>`}
 function sheetDoctor(s){
   const d=docById(s.id); const c=calif(d.id);
   if(s.paso==='listo'){
-    return sheetFrame('Cita confirmada',`<div class="hero-ok"><div class="ring">${I.check}</div><h2>¡Listo, tu cita está confirmada!</h2><p class="muted">${esc(fmtLarga(s.fecha))} a las ${esc(s.hora)}</p></div>
+    return sheetFrame('Cita confirmada',`${pasos(3)}<div class="hero-ok"><div class="ring">${I.check}</div><h2>¡Listo, tu cita está confirmada!</h2><p class="muted">${esc(fmtLarga(s.fecha))} a las ${esc(s.hora)}</p></div>
       <div class="card elev"><dl class="kv"><dt>Profesional</dt><dd>${esc(d.nombre)}</dd><dt>Especialidad</dt><dd>${esc(d.esp)}</dd><dt>Paciente</dt><dd>${esc(s.paciente)}</dd><dt>Modalidad</dt><dd>${esc(s.modo)}</dd><dt>Pago</dt><dd>${s.metodo==='membresia'?'Incluida en tu membresía':money(d.precio)+' en consultorio'}</dd><dt>Folio</dt><dd class="num">${esc(s.folio)}</dd></dl></div>
       <div class="note">${I.bell}<span>${S.perfil.notif?.recordatorios!==false?'Te recordaremos tu cita 24 horas y 2 horas antes.':'Tienes los recordatorios desactivados. Puedes activarlos en Perfil.'}</span></div>`,
       `<button class="btn btn-ghost grow" data-act="close">Cerrar</button><button class="btn btn-primary grow" data-act="verCitas">Ver mis citas</button>`);
@@ -860,7 +890,7 @@ function sheetDoctor(s){
   if(s.paso==='confirmar'){
     const P=S.perfil; const rest=cupoRestante();
     const pacientes=[P.nombre,...(P.plan==='familiar'?(P.miembros||[]).map(m=>m.nombre):[])];
-    return sheetFrame('Confirma tu cita',`
+    return sheetFrame('Confirma tu cita',`${pasos(2)}
       <div class="card elev row">${avatar(d,'sm')}<div style="min-width:0;flex:1"><b>${esc(d.nombre)}</b><p class="small muted">${esc(d.esp)}</p></div></div>
       <div class="card elev"><dl class="kv"><dt>Fecha</dt><dd>${esc(cap(fmtLarga(s.fecha)))}</dd><dt>Hora</dt><dd class="num">${esc(s.hora)}</dd><dt>Modalidad</dt><dd>${esc(s.modo)}</dd><dt>${s.modo==='Videoconsulta'?'Acceso':'Lugar'}</dt><dd>${s.modo==='Videoconsulta'?'Enlace seguro en la app':esc(d.dir)}</dd></dl></div>
       <div class="field"><label for="b-pac">¿Quién es el paciente?</label><select class="input" id="b-pac">${pacientes.map(p=>`<option ${s.paciente===p?'selected':''}>${esc(p)}</option>`).join('')}</select></div>
@@ -886,7 +916,7 @@ function sheetDoctor(s){
     <p>${esc(d.bio)}</p>
     <div class="row" style="align-items:flex-start;gap:8px">${I.pin.replace('<svg','<svg style="width:18px;height:18px;flex:none;margin-top:2px;color:var(--brand)"')}<span class="small">${esc(d.dir)} · ${d.km} km</span></div>
     ${d.seguros.length?`<div class="row wrap" style="gap:6px"><span class="small muted">Acepta:</span>${d.seguros.map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div>`:'<p class="small muted">No trabaja con aseguradoras.</p>'}
-    <section class="stack"><h3>Agenda tu cita</h3>
+    <section class="stack" id="agenda"><h3>Agenda tu cita</h3>
       ${d.modos.length>1?`<div class="seg">${d.modos.map(m=>`<button data-act="modo" data-v="${m}" aria-pressed="${s.modo===m}">${m==='Videoconsulta'?'Videoconsulta':'En consultorio'}</button>`).join('')}</div>`:`<span class="small muted">Solo ${d.modos[0]==='Presencial'?'en consultorio':'videoconsulta'}</span>`}
       <div class="days" role="group" aria-label="Fecha">${dias.map(f=>{const dt=parseYmd(f);const n=libresDe(d,f).length;return `<button class="day" data-act="fecha" data-v="${f}" aria-pressed="${s.fecha===f}" ${horasDe(d,f).length?'':'disabled'}><span>${f===hoy()?'hoy':DIAS[dt.getDay()]}</span><b class="num">${dt.getDate()}</b><small>${horasDe(d,f).length?(n?n+' lib.':'lleno'):'—'}</small></button>`}).join('')}</div>
       <div id="slotBox">${slotsHTML(d,s)}</div>
@@ -1009,10 +1039,12 @@ document.addEventListener('click',async e=>{
   switch(a){
     case 'tab': S.tab=v; S.confirmCancel=null; closeSheet(); render(); window.scrollTo(0,0); break;
     case 'esp': S.f.esp=v; document.querySelectorAll('[data-act="esp"]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v)); $('#results').innerHTML=resultsHTML(); break;
+    case 'soloVideo': S.f.modo='Videoconsulta'; render(); $('#results')&&$('#results').scrollIntoView({behavior:'smooth',block:'start'}); toast('Mostrando médicos con videoconsulta.'); break;
     case 'limpiar': S.f={q:'',esp:'Todas',seguro:'',modo:'',orden:'recomendados'}; render(); break;
     case 'svtipo': S.sv.tipo=v; render(); break;
     case 'citastab': S.citasTab=v; S.confirmCancel=null; render(); break;
     case 'doctor': {const d=docById(v); const x=proxima(d); openSheet({type:'doctor',id:v,paso:'elegir',fecha:x?x.fecha:hoy(),hora:null,modo:d.modos[0],paciente:S.perfil.nombre,metodo:cupoRestante()?'membresia':'consultorio'}); break}
+    case 'rapido': {const [id,f,h]=v.split('|'); const d=docById(id); openSheet({type:'doctor',id,paso:'confirmar',fecha:f,hora:h,modo:d.modos[0],paciente:S.perfil.nombre,metodo:cupoRestante()?'membresia':'consultorio'}); break}
     case 'fecha': S.sheet.fecha=v; S.sheet.hora=null; document.querySelectorAll('.day').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v)); $('#slotBox').innerHTML=slotsHTML(docById(S.sheet.id),S.sheet); updDocFoot(); break;
     case 'hora': S.sheet.hora=v; document.querySelectorAll('.slot').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v)); updDocFoot(); break;
     case 'modo': S.sheet.modo=v; document.querySelectorAll('[data-act="modo"]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v)); break;
@@ -1066,8 +1098,8 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
   const id=e.target.id;
-  if(id==='f-seguro'){S.f.seguro=e.target.value;$('#results').innerHTML=resultsHTML()}
-  if(id==='f-modo'){S.f.modo=e.target.value;$('#results').innerHTML=resultsHTML()}
+  if(id==='f-seguro'){S.f.seguro=e.target.value;e.target.classList.toggle('on',!!e.target.value);$('#results').innerHTML=resultsHTML()}
+  if(id==='f-modo'){S.f.modo=e.target.value;e.target.classList.toggle('on',!!e.target.value);$('#results').innerHTML=resultsHTML()}
   if(id==='f-orden'){S.f.orden=e.target.value;$('#results').innerHTML=resultsHTML()}
   if(id==='b-pac'&&S.sheet) S.sheet.paciente=e.target.value;
   if(e.target.name==='metodo'&&S.sheet){S.sheet.metodo=e.target.value;const p=document.querySelector('.sheet-foot .price');if(p)p.textContent=e.target.value==='membresia'?'$0':money(docById(S.sheet.id).precio)}
