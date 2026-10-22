@@ -701,7 +701,7 @@ function viewDescubrir(){
       <div class="li-ic" style="background:var(--surface)">${I.cal}</div>
       <div class="grow" style="min-width:0;flex:1"><b>Tu próxima cita: ${relDia(prox.fecha)}, ${prox.hora}</b><p class="small muted">${esc(docById(prox.doctorId)?.nombre)} · ${esc(prox.modalidad)}</p></div>${I.chev}</button>`:''}
   <div class="quick-acts">
-    <button data-act="soloVideo"><span class="li-ic">${I.video}</span><b>Videoconsulta</b><small>Desde tu casa</small></button>
+    <button data-act="soloVideo"><span class="li-ic">${I.video}</span><b>En línea</b><small>Videoconsulta</small></button>
     <button data-act="tab" data-v="servicios"><span class="li-ic">${I.services}</span><b>Estudios</b><small>Labs e imagen</small></button>
     <button data-act="tab" data-v="membresia"><span class="li-ic">${I.card}</span><b>${S.perfil.plan?'Mi credencial':'Membresía'}</b><small>${S.perfil.plan?'Lista para usar':'Desde $300/mes'}</small></button>
   </div>
