@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <linearGradient id="cb" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4FC6D8"/>
+      <stop offset="1" stop-color="#1D98AE"/>
+    </linearGradient>
+    <linearGradient id="ch" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5BCCDD"/>
+      <stop offset="1" stop-color="#26A6BC"/>
+    </linearGradient>
+    <linearGradient id="mt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9AA0A3"/>
+      <stop offset="1" stop-color="#6E7477"/>
+    </linearGradient>
+  </defs>
+
+  <!-- sombra -->
+  <ellipse cx="120" cy="222" rx="70" ry="8" fill="#0B3B44" opacity=".14"/>
+
+  <!-- cola en espiral con circuito -->
+  <path d="M150 182 C 190 186, 214 160, 206 132 C 199 108, 168 106, 162 126 C 157 142, 174 152, 184 142 C 190 136, 186 126, 178 127"
+        fill="none" stroke="url(#cb)" stroke-width="15" stroke-linecap="round"/>
+  <path d="M182 168 C 196 160, 204 148, 202 136" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" opacity=".7"/>
+  <circle cx="202" cy="134" r="3.6" fill="#FFFFFF" opacity=".85"/>
+
+  <!-- patas traseras -->
+  <path d="M138 196 q 6 14 22 14 q 6 0 6 -6 q -2 -10 -14 -14z" fill="url(#mt)"/>
+  <path d="M78 196 q -6 14 -22 14 q -6 0 -6 -6 q 2 -10 14 -14z" fill="url(#mt)"/>
+
+  <!-- cuerpo -->
+  <path d="M68 150 C 66 112, 92 96, 120 96 C 150 96, 172 114, 170 150 C 168 186, 146 204, 118 204 C 90 204, 70 186, 68 150 Z" fill="url(#cb)"/>
+  <!-- panza blanca -->
+  <path d="M92 150 C 92 128, 106 118, 120 118 C 136 118, 148 130, 147 152 C 146 176, 134 192, 119 192 C 104 192, 92 176, 92 150 Z" fill="#F4FBFC"/>
+  <path d="M100 140 h38 M98 154 h44 M102 168 h36 M108 181 h24" stroke="#D3EEF2" stroke-width="3" stroke-linecap="round"/>
+  <!-- escamas -->
+  <circle cx="80" cy="132" r="4" fill="#7DD8E6" opacity=".7"/>
+  <circle cx="160" cy="138" r="4.5" fill="#7DD8E6" opacity=".7"/>
+  <circle cx="157" cy="160" r="3" fill="#7DD8E6" opacity=".7"/>
+  <circle cx="79" cy="166" r="3" fill="#7DD8E6" opacity=".7"/>
+
+  <!-- cabeza -->
+  <path d="M60 78 C 58 46, 84 26, 118 26 C 154 26, 180 48, 178 80 C 176 108, 152 122, 118 122 C 84 122, 62 106, 60 78 Z" fill="url(#ch)"/>
+  <!-- cresta (casco) -->
+  <path d="M92 32 C 102 10, 140 8, 152 30 C 140 24, 104 24, 92 32 Z" fill="#1D98AE"/>
+  <path d="M104 22 l 6 -8 M120 18 l 0 -9 M136 22 l 6 -8" stroke="#1D98AE" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="110" cy="13" r="3.4" fill="#81878A"/>
+  <circle cx="120" cy="8" r="3.4" fill="#2FB1C6"/>
+  <circle cx="142" cy="13" r="3.4" fill="#81878A"/>
+
+  <!-- ojos de torreta -->
+  <g>
+    <circle cx="92" cy="72" r="24" fill="#26A6BC"/>
+    <circle cx="92" cy="72" r="18" fill="#FFFFFF"/>
+    <circle cx="96" cy="74" r="10" fill="#10282D"/>
+    <circle cx="99.5" cy="69.5" r="3.6" fill="#FFFFFF"/>
+    <circle cx="92" cy="72" r="18" fill="none" stroke="#81878A" stroke-width="2.5"/>
+  </g>
+  <g>
+    <circle cx="146" cy="72" r="24" fill="#26A6BC"/>
+    <circle cx="146" cy="72" r="18" fill="#FFFFFF"/>
+    <circle cx="142" cy="74" r="10" fill="#10282D"/>
+    <circle cx="145.5" cy="69.5" r="3.6" fill="#FFFFFF"/>
+    <circle cx="146" cy="72" r="18" fill="none" stroke="#81878A" stroke-width="2.5"/>
+  </g>
+  <!-- mejillas y sonrisa -->
+  <ellipse cx="78" cy="100" rx="7" ry="4.5" fill="#FF8FA6" opacity=".75"/>
+  <ellipse cx="160" cy="100" rx="7" ry="4.5" fill="#FF8FA6" opacity=".75"/>
+  <path d="M104 102 Q 119 116 134 102" fill="none" stroke="#10282D" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- brazo izquierdo tecnológico, saludando -->
+  <path d="M74 132 C 56 126, 46 112, 44 96" fill="none" stroke="url(#mt)" stroke-width="13" stroke-linecap="round"/>
+  <circle cx="58" cy="122" r="5" fill="#2FB1C6"/>
+  <g transform="translate(44 88) rotate(-12)">
+    <rect x="-13" y="-12" width="26" height="22" rx="7" fill="url(#mt)"/>
+    <rect x="-12" y="-26" width="6" height="16" rx="3" fill="url(#mt)"/>
+    <rect x="-3" y="-30" width="6" height="20" rx="3" fill="url(#mt)"/>
+    <rect x="6" y="-26" width="6" height="16" rx="3" fill="url(#mt)"/>
+    <rect x="12" y="-6" width="12" height="6" rx="3" fill="url(#mt)"/>
+    <path d="M-6 2 h10 v-6" fill="none" stroke="#2FB1C6" stroke-width="2.4" stroke-linecap="round"/>
+    <circle cx="4" cy="-6" r="2.6" fill="#2FB1C6"/>
+  </g>
+  <!-- líneas de circuito como en el logo -->
+  <path d="M30 78 h-10" stroke="#2FB1C6" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="17" cy="78" r="4" fill="#2FB1C6"/>
+  <path d="M30 64 h-6" stroke="#81878A" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="21" cy="64" r="4" fill="#81878A"/>
+
+  <!-- brazo derecho tecnológico -->
+  <path d="M164 138 C 176 146, 182 156, 180 168" fill="none" stroke="url(#mt)" stroke-width="13" stroke-linecap="round"/>
+  <circle cx="176" cy="150" r="5" fill="#2FB1C6"/>
+  <g transform="translate(180 174)">
+    <rect x="-11" y="-6" width="22" height="16" rx="6" fill="url(#mt)"/>
+    <rect x="-10" y="6" width="6" height="11" rx="3" fill="url(#mt)"/>
+    <rect x="-2" y="7" width="6" height="12" rx="3" fill="url(#mt)"/>
+    <rect x="6" y="6" width="6" height="10" rx="3" fill="url(#mt)"/>
+    <circle cx="0" cy="1" r="2.6" fill="#2FB1C6"/>
+  </g>
+</svg>
