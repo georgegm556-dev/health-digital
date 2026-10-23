@@ -549,7 +549,8 @@ function SupabaseStore(sb,user){
     modo:'supabase', uid:me, email:user.email||'',
     go(){ch.subscribe()}, stop(){try{sb.removeChannel(ch)}catch(e){} for(const k in L) L[k]=[]},
     onPerfil:on('perfil'), onCitas:on('citas'), onOcupados:on('ocupados'), onResenas:on('resenas'),
-    async savePerfil(p){chk(await safe(x=>sb.from('perfiles').upsert(x),{id:me,...toSnake(p)}));await refetch('perfil')},
+    async savePerfil(p){const x={id:me,...toSnake(p)};for(const k of ['plan','socio','renovacion','plan_estado','stripe_customer_id','stripe_subscription_id'])delete x[k];chk(await safe(y=>sb.from('perfiles').upsert(y),x));await refetch('perfil')},
+    refresh:k=>refetch(k),
     async addCita(c){const d=chk(await safe(x=>sb.from('citas').insert(x).select('id').single(),toSnake(c)));await refetch('citas');return d.id},
     async updateCita(id,patch){chk(await safe(x=>sb.from('citas').update(x).eq('id',id),toSnake(patch)));await refetch('citas')},
     async claim(key,data){const {error}=await sb.from('ocupados').insert({id:key,...toSnake(data)});
@@ -559,6 +560,7 @@ function SupabaseStore(sb,user){
     async addResena(r){chk(await safe(x=>sb.from('resenas').insert(x),toSnake(r)));await refetch('resenas')},
     async responder(id,texto){const d=chk(await sb.from('resenas').update({respuesta:texto,respondida:new Date().toISOString()}).eq('id',id).select('id'));if(!d||!d.length) throw {code:'no_medico'};await refetch('resenas')},
     async borrarTodo(){
+      if(S.perfil&&S.perfil.stripeSubscriptionId){await llamarPagos({accion:'cancelar'})}
       chk(await sb.from('ocupados').delete().eq('user_id',me).gte('fecha',hoy()));
       chk(await sb.from('citas').delete().eq('user_id',me));
       chk(await sb.from('perfiles').delete().eq('id',me));
@@ -589,6 +591,8 @@ async function bootSupabase(){
     if(!session&&ev==='SIGNED_OUT'){if(ST&&ST.stop)ST.stop();ST=null;S.store=null;S.ready=false;S.perfil=undefined;closeSheet();S.auth={modo:'entrar'};showAuth()}
   });
   const {data:{session}}=await sb.auth.getSession();
+  const qs=new URLSearchParams(location.search); const pago=qs.get('pago');
+  if(pago){history.replaceState(null,'',location.pathname); if(pago==='ok'){S.tab='membresia';S.esperandoPago=Date.now()} else setTimeout(()=>toast('Pago cancelado. No se hizo ningún cargo.'),1200)}
   if(session&&!(S.auth&&S.auth.modo==='nueva')){if(!ST) start(SupabaseStore(sb,session.user))} else if(S.auth&&S.auth.modo==='nueva'){showAuth()} else {S.auth=S.auth||{modo:'entrar'};showAuth()}
 }
 async function boot(){
@@ -610,7 +614,8 @@ async function boot(){
 }
 function start(store){
   if(ST&&ST.stop) ST.stop();
-  ST=store; S.store=store; S.ready=false; S.perfil=undefined; S.citas=[]; S.tab='descubrir';
+  ST=store; S.store=store; S.ready=false; S.perfil=undefined; S.citas=[]; S.tab=S.esperandoPago?'membresia':'descubrir';
+  if(S.esperandoPago&&store.refresh){toast('¡Pago recibido! Activando tu membresía…');[3000,7000,15000].forEach(t=>setTimeout(()=>store.refresh('perfil'),t))}
   const pill=$('#modePill');
   pill.textContent='Demo'; pill.title = store.modo==='local' ? 'Los datos se guardan en este dispositivo' : 'Datos sincronizados de forma privada'; pill.hidden = store.modo==='supabase' && !CONFIG.DEMO;
   let pending=4; const done=()=>{if(--pending===0){S.ready=true;render()}};
@@ -830,7 +835,14 @@ function usoMes(){
   const now=new Date();
   return S.citas.filter(c=>c.cubierta&&c.estado!=='cancelada'&&parseYmd(c.fecha).getMonth()===now.getMonth()&&parseYmd(c.fecha).getFullYear()===now.getFullYear()).length;
 }
-function cupoRestante(){const p=PLANES[S.perfil.plan];return p?Math.max(0,p.cupo-usoMes()):0}
+const conStripe=()=>S.store&&S.store.modo==='supabase';
+function pagoPendiente(){return conStripe()&&S.perfil.planEstado==='past_due'}
+function cupoRestante(){const p=PLANES[S.perfil.plan];if(!p||pagoPendiente()) return 0;return Math.max(0,p.cupo-usoMes())}
+async function llamarPagos(body){
+  const {data,error}=await S.sb.functions.invoke('pagos',{body});
+  if(error){let msg='Los pagos aún no están disponibles. Inténtalo más tarde.';try{const j=await error.context.json();if(j&&j.error)msg=j.error}catch(e){}throw new Error(msg)}
+  return data||{};
+}
 function planCard(id){
   const p=PLANES[id]; const actual=S.perfil.plan===id;
   return `<article class="card elev plan ${actual?'current':''}">
@@ -843,10 +855,13 @@ function planCard(id){
 function viewMembresia(){
   const P=S.perfil; const plan=PLANES[P.plan];
   const head=`<section class="stack" style="gap:6px"><h1>Membresía</h1><p class="muted">Consultas incluidas cada mes para ti y tu familia.</p></section>`;
-  if(!plan) return head+`<div class="note">${I.info}<span>Modo demo: activar un plan no genera ningún cargo.</span></div>`+planCard('individual')+planCard('familiar');
+  const notaPago=conStripe()?`<div class="note">${I.lock}<span>Pagos seguros con <b>Stripe</b>. Health Digital nunca ve ni guarda los datos de tu tarjeta. Cancela cuando quieras.</span></div>`:`<div class="note">${I.info}<span>Modo demo: activar un plan no genera ningún cargo.</span></div>`;
+  if(S.esperandoPago&&!plan&&Date.now()-S.esperandoPago<60000) return head+`<div class="card elev empty"><div class="ring" style="width:56px;height:56px;border-radius:50%;background:var(--brand-soft);display:grid;place-items:center;color:var(--brand)">${I.card}</div><h3>Activando tu membresía…</h3><p class="small muted">Recibimos tu pago. Tu credencial aparecerá aquí en unos segundos.</p></div>`;
+  if(!plan) return head+notaPago+planCard('individual')+planCard('familiar');
   const uso=usoMes(), rest=Math.max(0,plan.cupo-uso);
   const miembros=[{nombre:P.nombre,parentesco:'Titular'},...(P.miembros||[])];
   return head+`
+  ${pagoPendiente()?`<div class="confirm-box"><p class="small"><b>No pudimos cobrar tu membresía.</b> Actualiza tu tarjeta para seguir usando tus consultas incluidas. Stripe volverá a intentar el cobro.</p><button class="btn btn-danger btn-sm" data-act="portalPago">Actualizar tarjeta</button></div>`:''}
   <div class="cred" role="group" aria-label="Credencial digital"><span class="logo-wm" aria-hidden="true"></span>
     <div class="row between" style="position:relative;z-index:1"><span class="label">Credencial digital</span><span style="font-family:var(--f-display);font-weight:700;letter-spacing:.14em;font-size:.78rem">HEALTH DIGITAL</span></div>
     <div class="cred-grid" style="position:relative;z-index:1">
@@ -870,8 +885,8 @@ function viewMembresia(){
   </div>`:''}
   <h2>Planes disponibles</h2>
   ${planCard('individual')}${planCard('familiar')}
-  <button class="btn btn-ghost btn-block" data-act="cancelarPlan">Cancelar membresía</button>
-  <div class="note">${I.info}<span>Modo demo: los cambios se guardan pero no generan cargos.</span></div>`;
+  ${conStripe()?`<button class="btn btn-ghost btn-block" data-act="portalPago">${I.card} Pagos, recibos y cancelación</button>`:`<button class="btn btn-ghost btn-block" data-act="cancelarPlan">Cancelar membresía</button>`}
+  ${notaPago}`;
 }
 function drawQR(){
   const cv=$('#qr'); if(!cv) return; const ctx=cv.getContext('2d'); const n=21, s=64/n;
@@ -992,8 +1007,9 @@ function sheetPlan(s){
   return sheetFrame(S.perfil.plan?'Cambiar de plan':'Activar membresía',`
     <div class="card elev plan"><h3>${p.nombre}</h3><div class="plan-price num">${money(p.precio)} <small>MXN / mes</small></div><ul>${p.beneficios.map(b=>`<li>${I.check}<span>${esc(b)}</span></li>`).join('')}</ul></div>
     <div class="card elev"><dl class="kv"><dt>Cobro mensual</dt><dd class="num">${money(p.precio)} MXN</dd><dt>Primera renovación</dt><dd>${esc(fmtMes(sumarMes(new Date().toISOString())))}</dd><dt>Permanencia</dt><dd>Sin plazo forzoso</dd></dl></div>
-    <div class="note">${I.lock}<span><b>Modo demo:</b> no se pide tarjeta ni se genera ningún cargo. En la versión final el pago se procesa con un proveedor certificado y Health Digital nunca guarda los datos de tu tarjeta.</span></div>`,
-    `<button class="btn btn-ghost grow" data-act="close">Ahora no</button><button class="btn btn-primary grow" data-act="activarPlan" data-v="${s.plan}">Activar plan</button>`);
+    ${conStripe()?`<div class="note">${I.lock}<span>${S.perfil.plan?'El cambio se aplica de inmediato. Stripe cobra o acredita la diferencia proporcional en tu siguiente recibo.':'Te llevaremos a la página de pago segura de <b>Stripe</b>. Health Digital nunca ve ni guarda los datos de tu tarjeta.'}</span></div>`:`<div class="note">${I.lock}<span><b>Modo demo:</b> no se pide tarjeta ni se genera ningún cargo.</span></div>`}
+    ${s.error?`<p class="err">${esc(s.error)}</p>`:''}`,
+    `<button class="btn btn-ghost grow" data-act="close">Ahora no</button><button class="btn btn-primary grow" data-act="activarPlan" data-v="${s.plan}" ${s.busy?'disabled':''}>${s.busy?'Un momento…':conStripe()?(S.perfil.plan?'Cambiar de plan':'Continuar al pago'):'Activar plan'}</button>`);
 }
 function sheetMiembro(s){
   return sheetFrame('Agregar miembro',`<form id="mForm" class="stack" novalidate>
@@ -1150,7 +1166,14 @@ document.addEventListener('click',async e=>{
     case 'cat': {const [k,n]=v.split('|'); S.sheet.texto=$('#r-txt').value; S.sheet[k]=Number(n); renderSheet(); break}
     case 'publicarResena': {const s=S.sheet; const c=S.citas.find(x=>x.id===s.citaId); try{await ST.addResena({doctorId:c.doctorId,citaId:c.id,estrellas:s.estrellas,puntualidad:s.puntualidad||null,trato:s.trato||null,instalaciones:s.instalaciones||null,texto:$('#r-txt').value.trim().slice(0,400),fecha:hoy()}); closeSheet(); toast('¡Gracias! Tu opinión ya está publicada.')}catch(err){toast('No se pudo publicar. Inténtalo de nuevo.')} break}
     case 'plan': openSheet({type:'plan',plan:v}); break;
-    case 'activarPlan': {const P={...S.perfil}; const cambio=!!P.plan; P.plan=v; if(!P.socio)P.socio=socioNum(); if(!cambio)P.renovacion=sumarMes(new Date().toISOString()); if(!P.renovacion)P.renovacion=sumarMes(new Date().toISOString()); if(v==='individual')P.miembros=[]; try{await ST.savePerfil(P); closeSheet(); toast(cambio?'Plan actualizado.':'¡Membresía activada! Ya tienes tu credencial digital.')}catch(err){toast('No se pudo activar el plan.')} break}
+    case 'portalPago': try{t.disabled=true;const r=await llamarPagos({accion:'portal'});if(r.url) location.href=r.url}catch(err){toast(err.message)}finally{t.disabled=false} break;
+    case 'activarPlan': if(conStripe()){const sh=S.sheet;sh.busy=true;sh.error='';renderSheet();
+        try{const r=await llamarPagos({accion:S.perfil.plan?'cambiar':'checkout',plan:v});
+          if(r.url){location.href=r.url;break}
+          closeSheet();toast('Plan actualizado. Se reflejará en unos segundos.');[2500,6000].forEach(x=>setTimeout(()=>ST.refresh('perfil'),x))}
+        catch(err){if(S.sheet){S.sheet.busy=false;S.sheet.error=err.message;renderSheet()}}
+        break}
+      {const P={...S.perfil}; const cambio=!!P.plan; P.plan=v; if(!P.socio)P.socio=socioNum(); if(!cambio)P.renovacion=sumarMes(new Date().toISOString()); if(!P.renovacion)P.renovacion=sumarMes(new Date().toISOString()); if(v==='individual')P.miembros=[]; try{await ST.savePerfil(P); closeSheet(); toast(cambio?'Plan actualizado.':'¡Membresía activada! Ya tienes tu credencial digital.')}catch(err){toast('No se pudo activar el plan.')} break}
     case 'cancelarPlan': {const P={...S.perfil,plan:null,miembros:[]}; try{await ST.savePerfil(P); toast('Membresía cancelada. Puedes volver a activarla cuando quieras.')}catch(err){toast('No se pudo cancelar.')} break}
     case 'addMiembro': openSheet({type:'miembro'}); break;
     case 'guardarMiembro': {const n=$('#m-nom').value.trim(), p=$('#m-par').value, ed=$('#m-edad').value.trim(); const er=$('#m-err');
