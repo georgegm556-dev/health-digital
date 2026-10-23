@@ -84,7 +84,7 @@ main{flex:1;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:m
 
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-m);padding:14px}
 .card.elev{box-shadow:var(--shadow);border-color:transparent}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;border:1px solid transparent;padding:11px 16px;font-weight:600;font-size:.95rem;min-height:44px}
+.btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;border:1px solid transparent;padding:11px 16px;font-weight:600;font-size:.95rem;min-height:44px}
 .btn-primary{background:var(--brand);color:var(--on-brand)}
 .btn-primary:disabled{opacity:.45;cursor:not-allowed}
 .btn-ghost{background:var(--surface);border-color:var(--line);color:var(--ink)}
@@ -127,6 +127,31 @@ textarea.input{min-height:84px;resize:vertical}
 .quick-acts small{font-size:.74rem;color:var(--muted)}
 .upsell{display:flex;gap:12px;align-items:center;border-radius:16px;padding:14px;background:var(--brand-soft);border:1px solid transparent;text-align:left;width:100%}
 .upsell b{color:var(--brand-ink)}
+.fpill{flex:none;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 13px;font-size:.85rem;font-weight:500;min-height:38px;white-space:nowrap}
+.fpill[aria-pressed="true"]{border-color:var(--brand);background:var(--brand-soft);color:var(--brand-ink)}
+.fpill svg{width:16px;height:16px}
+.doc{position:relative}
+.fav-btn{position:absolute;top:10px;right:10px;z-index:1;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;color:var(--muted)}
+.fav-btn.static{position:static;flex:none}
+.fav-btn[aria-pressed="true"]{color:#E0475B;border-color:#F3C3CA}
+.doc .doc-main{padding-right:34px}
+.serv-list{display:flex;flex-direction:column;gap:8px}
+.serv{display:flex;align-items:center;gap:12px;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:11px 12px;cursor:pointer}
+.serv input{accent-color:var(--brand);width:18px;height:18px;flex:none;margin:0}
+.serv.on{border-color:var(--brand);background:var(--brand-soft)}
+.serv .grow{flex:1;min-width:0}
+.rev-sum{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.rev-big{display:flex;flex-direction:column;align-items:center;gap:2px}
+.rev-big b{font-family:var(--f-display);font-size:2rem;line-height:1}
+.rev-bars{display:flex;flex-direction:column;gap:6px;min-width:0}
+.rev-bar{display:grid;grid-template-columns:96px 1fr 28px;gap:8px;align-items:center}
+.bar{height:8px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--cyan);border-radius:999px}
+.reply{border-left:3px solid var(--brand);background:var(--surface-2);border-radius:0 10px 10px 0;padding:8px 10px;margin-top:4px;display:flex;flex-direction:column;gap:2px}
+.cats{display:flex;flex-direction:column;gap:6px;padding:10px 14px}
+.cat-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.rate.sm button{font-size:1.5rem}
+.cal-add{display:flex;flex-direction:column;gap:6px}
 .trust{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .trust div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px;font-size:.78rem;line-height:1.3;color:var(--muted)}
 .trust svg{width:20px;height:20px;color:var(--brand)}
@@ -347,6 +372,18 @@ const DOCTORES = [
    idiomas:['Español'], dias:[1,3,5,6], horas:['08:30','10:00','11:30','17:00','18:30'],
    bio:'Planes de alimentación personalizados, composición corporal y acompañamiento para hábitos sostenibles.'}
 ];
+const EXTRA = {
+  'camila-restrepo':{serv:[['Consulta de medicina general',650,30,1],['Consulta de seguimiento',500,20,1],['Chequeo preventivo completo',1200,60,0],['Certificado médico',350,15,0]],pad:['Hipertensión','Diabetes tipo 2','Infecciones respiratorias','Colesterol alto','Chequeo anual']},
+  'alejandro-mendez':{serv:[['Primera consulta de cardiología',950,40,1],['Consulta de seguimiento',750,30,1],['Electrocardiograma',600,20,0],['Valoración preoperatoria',1300,45,0]],pad:['Hipertensión','Arritmias','Dolor en el pecho','Insuficiencia cardiaca','Prevención cardiovascular']},
+  'valeria-torres':{serv:[['Consulta dermatológica',800,30,1],['Revisión de lunares',900,30,1],['Tratamiento de acné',950,30,0],['Peeling químico',1800,45,0]],pad:['Acné','Manchas en la piel','Dermatitis','Caída de cabello','Revisión de lunares']},
+  'diego-hernandez':{serv:[['Consulta pediátrica',700,30,1],['Control del niño sano',650,30,1],['Valoración del recién nacido',900,45,1],['Aplicación de vacuna',250,15,0]],pad:['Control del niño sano','Fiebre e infecciones','Alergias','Crecimiento y desarrollo','Asma infantil']},
+  'sofia-ramirez':{serv:[['Consulta ginecológica',850,30,1],['Control prenatal',900,40,1],['Papanicolaou',600,20,0],['Colocación de DIU',2500,40,0]],pad:['Control prenatal','Anticoncepción','Menopausia','Síndrome de ovario poliquístico','Revisión anual']},
+  'luis-ortega':{serv:[['Valoración dental',600,30,1],['Limpieza dental',800,45,0],['Resina',900,45,0],['Valoración de ortodoncia',500,30,1]],pad:['Caries','Sensibilidad dental','Ortodoncia','Limpieza y prevención','Urgencias dentales']},
+  'andres-villalobos':{serv:[['Sesión de psicoterapia',700,50,1],['Primera entrevista',600,50,1],['Terapia de pareja',950,60,0]],pad:['Ansiedad','Estrés laboral','Depresión','Duelo','Autoestima']},
+  'paula-ibarra':{serv:[['Consulta de nutrición',550,45,1],['Seguimiento nutricional',450,30,1],['Plan deportivo',750,60,0]],pad:['Pérdida de peso','Diabetes','Nutrición deportiva','Colesterol alto','Alimentación infantil']}
+};
+DOCTORES.forEach(d=>{const x=EXTRA[d.id];d.servicios=x.serv.map(([n,p,min,mem],i)=>({id:'s'+i,n,p,min,mem:!!mem}));d.pad=x.pad;d.precio=d.servicios[0].p});
+const servDe=(d,id)=>d.servicios.find(x=>x.id===id)||d.servicios[0];
 const ESPECIALIDADES = ['Todas',...new Set(DOCTORES.map(d=>d.esp))];
 const SEGUROS = ['GNP','AXA','MetLife','Seguros Monterrey','Bupa'];
 const PROVEEDORES = [
@@ -391,6 +428,9 @@ function horasDe(doc,fecha){
 function libre(doc,fecha,hora){return !S.ocupados.has(slotKey(doc.id,fecha,hora))}
 function libresDe(doc,fecha){return horasDe(doc,fecha).filter(h=>libre(doc,fecha,h))}
 function proxima(doc){for(const f of proximosDias(14)){const l=libresDe(doc,f);if(l.length) return {fecha:f,hora:l[0]}}return null}
+const CATS=[['puntualidad','Puntualidad'],['trato','Trato'],['instalaciones','Instalaciones']];
+function califCats(docId){const r=S.resenas.filter(x=>x.doctorId===docId);return CATS.map(([k,l])=>{const v=r.map(x=>x[k]).filter(n=>n>=1);return {k,l,prom:v.length?v.reduce((a,b)=>a+b,0)/v.length:null}})}
+const estrellas=(n,max=5)=>`<span class="stars" aria-label="${n} de ${max} estrellas">${'★'.repeat(n)}<span style="color:var(--line)">${'★'.repeat(max-n)}</span></span>`;
 function calif(docId){const r=S.resenas.filter(x=>x.doctorId===docId);if(!r.length) return null;return {prom:r.reduce((a,b)=>a+b.estrellas,0)/r.length,n:r.length}}
 function uid(){return Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4)}
 function socioNum(){return 'HD-'+Math.floor(100000+Math.random()*899999)}
@@ -422,6 +462,7 @@ const I = {
   trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
   info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>'
 };
+const heart = on=>`<svg viewBox="0 0 24 24" width="18" height="18" fill="${on?'currentColor':'none'}" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-9-9a4.8 4.8 0 0 1 9-3 4.8 4.8 0 0 1 9 3c-2 4.6-9 9-9 9z"/></svg>`;
 const avatar = (d,cls='')=>`<div class="avatar ${cls}" style="background:${d.color}" aria-hidden="true">${esc(d.ini)}</div>`;
 
 /* ============ Almacenamiento: nube (db) o local ============ */
@@ -443,6 +484,7 @@ function LocalStore(){
     async claim(key,data){if(st.ocupados[key]) return false;st.ocupados[key]=data;emit('ocupados');return true},
     async release(key){delete st.ocupados[key];emit('ocupados')},
     async addResena(r){st.resenas.push({id:uid(),...r});emit('resenas')},
+    async responder(id,texto){st.resenas=st.resenas.map(r=>r.id===id?{...r,respuesta:texto,respondida:new Date().toISOString()}:r);emit('resenas')},
     async borrarTodo(){for(const c of st.citas){if(c.estado==='confirmada'&&citaTime(c)>Date.now()) delete st.ocupados[c.slot]}st.perfil=null;st.citas=[];emit('ocupados');emit('citas');emit('perfil')}
   };
 }
@@ -471,6 +513,7 @@ function CloudStore(db,me){
     },
     release:key=>ocup.doc(key).delete(),
     async addResena(r){await res.add(r)},
+    responder:(id,texto)=>res.doc(id).update({respuesta:texto,respondida:new Date().toISOString()}),
     async borrarTodo(){
       for(const c of S.citas){
         if(c.estado==='confirmada'&&citaTime(c)>Date.now()){try{await ocup.doc(c.slot).delete()}catch(e){}}
@@ -487,11 +530,13 @@ function SupabaseStore(sb,user){
   const me=user.id; const L={perfil:[],citas:[],ocupados:[],resenas:[]};
   const chk=({data,error})=>{if(error) throw error; return data};
   const fail=()=>toast('No se pudo sincronizar. Revisa tu conexión.');
+  // Si la base de datos aún no tiene una columna nueva, se reintenta sin ella en lugar de fallar.
+  const safe=async(fn,payload)=>{let r=await fn(payload);let n=0;while(r.error&&r.error.code==='PGRST204'&&n++<6){const m=/the '([^']+)' column/.exec(r.error.message||'');if(!m)break;delete payload[m[1]];r=await fn(payload)}return r};
   const fetchers={
     perfil:async()=>{const d=chk(await sb.from('perfiles').select('*').eq('id',me).maybeSingle());if(!d) return null;const p=toCamel(d);delete p.id;return p},
     citas:async()=>chk(await sb.from('citas').select('*').eq('user_id',me)).map(toCamel),
     ocupados:async()=>chk(await sb.from('ocupados').select('id,doctor_id,fecha,hora,modalidad,tipo').gte('fecha',hoy())).map(toCamel),
-    resenas:async()=>chk(await sb.from('resenas').select('id,doctor_id,cita_id,estrellas,texto,fecha')).map(toCamel)
+    resenas:async()=>chk(await sb.from('resenas').select('*')).map(r=>{const x=toCamel(r);delete x.userId;return x})
   };
   const refetch=async k=>{try{const v=await fetchers[k]();L[k].forEach(f=>f(v))}catch(e){fail()}};
   const ch=sb.channel('hd-'+me)
@@ -504,14 +549,15 @@ function SupabaseStore(sb,user){
     modo:'supabase', uid:me, email:user.email||'',
     go(){ch.subscribe()}, stop(){try{sb.removeChannel(ch)}catch(e){} for(const k in L) L[k]=[]},
     onPerfil:on('perfil'), onCitas:on('citas'), onOcupados:on('ocupados'), onResenas:on('resenas'),
-    async savePerfil(p){chk(await sb.from('perfiles').upsert({id:me,...toSnake(p)}));await refetch('perfil')},
-    async addCita(c){const d=chk(await sb.from('citas').insert(toSnake(c)).select('id').single());await refetch('citas');return d.id},
-    async updateCita(id,patch){chk(await sb.from('citas').update(toSnake(patch)).eq('id',id));await refetch('citas')},
+    async savePerfil(p){chk(await safe(x=>sb.from('perfiles').upsert(x),{id:me,...toSnake(p)}));await refetch('perfil')},
+    async addCita(c){const d=chk(await safe(x=>sb.from('citas').insert(x).select('id').single(),toSnake(c)));await refetch('citas');return d.id},
+    async updateCita(id,patch){chk(await safe(x=>sb.from('citas').update(x).eq('id',id),toSnake(patch)));await refetch('citas')},
     async claim(key,data){const {error}=await sb.from('ocupados').insert({id:key,...toSnake(data)});
       if(error){if(error.code==='23505'||error.code==='42501') {await refetch('ocupados');return false} throw error}
       await refetch('ocupados');return true},
     async release(key){chk(await sb.from('ocupados').delete().eq('id',key));await refetch('ocupados')},
-    async addResena(r){chk(await sb.from('resenas').insert(toSnake(r)));await refetch('resenas')},
+    async addResena(r){chk(await safe(x=>sb.from('resenas').insert(x),toSnake(r)));await refetch('resenas')},
+    async responder(id,texto){const d=chk(await sb.from('resenas').update({respuesta:texto,respondida:new Date().toISOString()}).eq('id',id).select('id'));if(!d||!d.length) throw {code:'no_medico'};await refetch('resenas')},
     async borrarTodo(){
       chk(await sb.from('ocupados').delete().eq('user_id',me).gte('fecha',hoy()));
       chk(await sb.from('citas').delete().eq('user_id',me));
@@ -524,7 +570,7 @@ function SupabaseStore(sb,user){
 /* ============ Estado ============ */
 const S = {
   tab:'descubrir', perfil:undefined, citas:[], ocupados:new Map(), resenas:[],
-  f:{q:'',esp:'Todas',seguro:'',modo:'',orden:'recomendados'},
+  f:{q:'',esp:'Todas',seguro:'',modo:'',orden:'recomendados',disp:'',precio:'',fav:false},
   sv:{q:'',tipo:'Todos'}, citasTab:'proximas', confirmCancel:null,
   sheet:null, nombreSugerido:'', userApi:null, store:null, ready:false
 };
@@ -582,7 +628,7 @@ function render(soft){
   const v=$('#view');
   if(!S.perfil){$('#nav').hidden=true; if(!soft||!v.querySelector('#onb')) v.innerHTML=viewOnboarding(); return}
   $('#nav').hidden=false; renderNav();
-  if(soft && S.tab==='descubrir' && v.querySelector('#results')){$('#results').innerHTML=resultsHTML();return}
+  if(soft && S.tab==='descubrir' && v.querySelector('#results')){$('#results').innerHTML=resultsHTML();document.querySelectorAll('.fpill').forEach(b=>{const a=b.dataset.act;b.setAttribute('aria-pressed',a==='favFiltro'?S.f.fav:S.f.disp===b.dataset.v);if(a==='favFiltro')b.innerHTML=heart(S.f.fav)+' Favoritos'});return}
   const map={descubrir:viewDescubrir,servicios:viewServicios,citas:viewCitas,membresia:viewMembresia,perfil:viewPerfil};
   const keepScroll=window.scrollY;
   v.innerHTML=map[S.tab]();
@@ -661,8 +707,12 @@ function trustHTML(){
 
 /* ---------- Descubrir ---------- */
 function filtrarDoctores(){
-  const {q,esp,seguro,modo,orden}=S.f; const t=q.trim().toLowerCase();
-  let r=DOCTORES.filter(d=>(esp==='Todas'||d.esp===esp)&&(!seguro||d.seguros.includes(seguro))&&(!modo||d.modos.includes(modo))&&(!t||(d.nombre+' '+d.esp+' '+d.zona).toLowerCase().includes(t)));
+  const {q,esp,seguro,modo,orden,disp,precio,fav}=S.f; const t=q.trim().toLowerCase(); const favs=S.perfil.favoritos||[];
+  const semana=proximosDias(7);
+  let r=DOCTORES.filter(d=>(esp==='Todas'||d.esp===esp)&&(!seguro||d.seguros.includes(seguro))&&(!modo||d.modos.includes(modo))
+    &&(!t||(d.nombre+' '+d.esp+' '+d.zona+' '+d.pad.join(' ')+' '+d.servicios.map(x=>x.n).join(' ')).toLowerCase().includes(t))
+    &&(!precio||d.precio<=Number(precio))&&(!fav||favs.includes(d.id))
+    &&(disp!=='hoy'||libresDe(d,hoy()).length>0)&&(disp!=='semana'||semana.some(f=>libresDe(d,f).length>0)));
   const p=d=>{const x=proxima(d);return x?citaTime({fecha:x.fecha,hora:x.hora}):Infinity};
   if(orden==='precio') r.sort((a,b)=>a.precio-b.precio);
   else if(orden==='distancia') r.sort((a,b)=>a.km-b.km);
@@ -673,13 +723,15 @@ function filtrarDoctores(){
 function proximosLibres(doc,n){const out=[];for(const f of proximosDias(14)){for(const h of libresDe(doc,f)){out.push({fecha:f,hora:h});if(out.length>=n) return out}}return out}
 function docCard(d){
   const c=calif(d.id), libres=proximosLibres(d,4);
+  const fav=(S.perfil.favoritos||[]).includes(d.id);
   return `<article class="card elev doc">
+    <button class="fav-btn" data-act="fav" data-v="${d.id}" aria-pressed="${fav}" aria-label="Guardar a ${esc(d.nombre)} en favoritos">${heart(fav)}</button>
     <button class="doc-hit" data-act="doctor" data-v="${d.id}" aria-label="Ver perfil de ${esc(d.nombre)}">
     <div class="doc-top">${avatar(d)}
       <div class="doc-main">
         <span class="doc-name">${esc(d.nombre)} <span title="Cédula verificada">${I.verified}</span></span>
         <span class="muted small">${esc(d.esp)} · ${d.exp} años de experiencia</span>
-        <span class="doc-meta">${c?`<span><span class="stars">★ ${c.prom.toFixed(1)}</span> (${c.n})</span>`:''}<span>${esc(d.zona)} · ${d.km} km</span><span class="price num">${money(d.precio)}</span></span>
+        <span class="doc-meta">${c?`<span><span class="stars">★ ${c.prom.toFixed(1)}</span> (${c.n})</span>`:''}<span>${esc(d.zona)} · ${d.km} km</span><span class="price num">desde ${money(Math.min(...d.servicios.map(x=>x.p)))}</span></span>
       </div>
     </div>
     <div class="row wrap" style="gap:6px">${d.modos.includes('Videoconsulta')?`<span class="tag blue">${I.video} Videoconsulta</span>`:''}${d.seguros.slice(0,3).map(s=>`<span class="tag">${esc(s)}</span>`).join('')}</div>
@@ -689,7 +741,7 @@ function docCard(d){
 }
 function resultsHTML(){
   const r=filtrarDoctores();
-  if(!r.length) return `<div class="card empty">${I.search}<h3>No encontramos profesionales con esos filtros</h3><p class="muted small">Prueba con otra especialidad o quita el filtro de seguro.</p><button class="btn btn-soft btn-sm" data-act="limpiar">Quitar filtros</button></div>`;
+  if(!r.length) return `<div class="card empty">${I.search}<h3>No encontramos profesionales con esos filtros</h3><p class="muted small">${S.f.fav&&!(S.perfil.favoritos||[]).length?'Aún no guardas favoritos. Toca el corazón en la tarjeta de un médico.':'Prueba con otra especialidad, otro día o quita algún filtro.'}</p><button class="btn btn-soft btn-sm" data-act="limpiar">Quitar filtros</button></div>`;
   return `<p class="muted small num">${r.length} ${r.length===1?'profesional disponible':'profesionales disponibles'}</p>`+r.map(docCard).join('');
 }
 function viewDescubrir(){
@@ -707,6 +759,10 @@ function viewDescubrir(){
   </div>
   <div class="chips" role="group" aria-label="Especialidad">${ESPECIALIDADES.map(e=>`<button class="chip" data-act="esp" data-v="${esc(e)}" aria-pressed="${S.f.esp===e}">${esc(e)}</button>`).join('')}</div>
   <div class="filters">
+    <button class="fpill" data-act="disp" data-v="hoy" aria-pressed="${S.f.disp==='hoy'}">Hoy</button>
+    <button class="fpill" data-act="disp" data-v="semana" aria-pressed="${S.f.disp==='semana'}">Esta semana</button>
+    <button class="fpill" data-act="favFiltro" aria-pressed="${S.f.fav}">${heart(S.f.fav)} Favoritos</button>
+    <select class="input ${S.f.precio?'on':''}" id="f-precio" aria-label="Precio máximo"><option value="">Cualquier precio</option>${[600,800,1000].map(x=>`<option value="${x}" ${String(S.f.precio)===String(x)?'selected':''}>Hasta ${money(x)}</option>`).join('')}</select>
     <select class="input ${S.f.seguro?'on':''}" id="f-seguro" aria-label="Seguro"><option value="">Cualquier seguro</option>${SEGUROS.map(s=>`<option ${S.f.seguro===s?'selected':''}>${esc(s)}</option>`).join('')}</select>
     <select class="input ${S.f.modo?'on':''}" id="f-modo" aria-label="Modalidad"><option value="">Presencial o en línea</option><option value="Videoconsulta" ${S.f.modo==='Videoconsulta'?'selected':''}>Videoconsulta</option><option value="Presencial" ${S.f.modo==='Presencial'?'selected':''}>Consultorio</option></select>
     <select class="input" id="f-orden" aria-label="Ordenar"><option value="recomendados">Ordenar: disponibles antes</option><option value="distancia" ${S.f.orden==='distancia'?'selected':''}>Más cerca</option><option value="precio" ${S.f.orden==='precio'?'selected':''}>Menor precio</option><option value="calificacion" ${S.f.orden==='calificacion'?'selected':''}>Mejor calificados</option></select>
@@ -749,13 +805,13 @@ function citaCard(c){
       <div style="min-width:0;flex:1"><h3>${esc(d.nombre)}</h3><p class="small muted">${esc(d.esp)}</p><p class="small"><b class="num">${esc(DIAS[dt.getDay()])} · ${esc(c.hora)}</b> · ${esc(c.modalidad)}</p></div>
       <span class="tag ${cls}">${lbl}</span></div>
     <dl class="kv small">
-      <dt>Paciente</dt><dd>${esc(c.paciente)}</dd>
+      ${c.servicio?`<dt>Servicio</dt><dd>${esc(c.servicio)}</dd>`:''}<dt>Paciente</dt><dd>${esc(c.paciente)}</dd>
       <dt>${c.modalidad==='Videoconsulta'?'Acceso':'Dirección'}</dt><dd>${c.modalidad==='Videoconsulta'?'El enlace se activa 15 min antes':esc(d.dir)}</dd>
       <dt>Pago</dt><dd>${c.cubierta?'Incluida en tu membresía':esc(money(c.precio))+' en consultorio'}</dd>
       <dt>Folio</dt><dd class="num">${esc(c.folio)}</dd>
     </dl>
     ${S.confirmCancel===c.id?`<div class="confirm-box"><p class="small"><b>¿Cancelar esta cita?</b> El horario quedará libre para otros pacientes${c.cubierta?' y se te devolverá la consulta de tu membresía':''}.</p><div class="row"><button class="btn btn-danger btn-sm" data-act="cancelarSi" data-v="${c.id}">Sí, cancelar</button><button class="btn btn-ghost btn-sm" data-act="cancelarNo">No, mantenerla</button></div></div>`:
-    futura?`<div class="row"><button class="btn btn-ghost btn-sm" style="flex:1" data-act="reprogramar" data-v="${c.id}">Reprogramar</button><button class="btn btn-danger btn-sm" style="flex:1" data-act="cancelar" data-v="${c.id}">Cancelar</button></div>
+    futura?`${calendarioHTML({...c,min:((d.servicios||[]).find(x=>x.n===c.servicio)||{min:30}).min})}<div class="row"><button class="btn btn-ghost btn-sm" style="flex:1" data-act="reprogramar" data-v="${c.id}">Reprogramar</button><button class="btn btn-danger btn-sm" style="flex:1" data-act="cancelar" data-v="${c.id}">Cancelar</button></div>
       ${S.store.modo!=='supabase'?`<button class="link small" data-act="simular" data-v="${c.id}" style="align-self:flex-start">Demo: marcar como atendida</button>`:''}`:
     puedeOpinar?`<button class="btn btn-soft btn-sm" data-act="opinar" data-v="${c.id}">${I.star} Calificar consulta</button>`:
     yaOpino?`<span class="small muted">Gracias, tu opinión ya está publicada.</span>`:''}
@@ -883,37 +939,42 @@ function sheetDoctor(s){
   const d=docById(s.id); const c=calif(d.id);
   if(s.paso==='listo'){
     return sheetFrame('Cita confirmada',`${pasos(3)}<div class="hero-ok"><div class="ring">${I.check}</div><h2>¡Listo, tu cita está confirmada!</h2><p class="muted">${esc(fmtLarga(s.fecha))} a las ${esc(s.hora)}</p></div>
-      <div class="card elev"><dl class="kv"><dt>Profesional</dt><dd>${esc(d.nombre)}</dd><dt>Especialidad</dt><dd>${esc(d.esp)}</dd><dt>Paciente</dt><dd>${esc(s.paciente)}</dd><dt>Modalidad</dt><dd>${esc(s.modo)}</dd><dt>Pago</dt><dd>${s.metodo==='membresia'?'Incluida en tu membresía':money(d.precio)+' en consultorio'}</dd><dt>Folio</dt><dd class="num">${esc(s.folio)}</dd></dl></div>
+      <div class="card elev"><dl class="kv"><dt>Profesional</dt><dd>${esc(d.nombre)}</dd><dt>Servicio</dt><dd>${esc(servDe(d,s.serv).n)}</dd><dt>Paciente</dt><dd>${esc(s.paciente)}</dd><dt>Modalidad</dt><dd>${esc(s.modo)}</dd><dt>Pago</dt><dd>${s.metodo==='membresia'?'Incluida en tu membresía':money(servDe(d,s.serv).p)+' en consultorio'}</dd><dt>Folio</dt><dd class="num">${esc(s.folio)}</dd></dl></div>
+      ${calendarioHTML({doctorId:d.id,fecha:s.fecha,hora:s.hora,modalidad:s.modo,servicio:servDe(d,s.serv).n,folio:s.folio,min:servDe(d,s.serv).min})}
       <div class="note">${I.bell}<span>${S.perfil.notif?.recordatorios!==false?'Te recordaremos tu cita 24 horas y 2 horas antes.':'Tienes los recordatorios desactivados. Puedes activarlos en Perfil.'}</span></div>`,
       `<button class="btn btn-ghost grow" data-act="close">Cerrar</button><button class="btn btn-primary grow" data-act="verCitas">Ver mis citas</button>`);
   }
   if(s.paso==='confirmar'){
-    const P=S.perfil; const rest=cupoRestante();
+    const P=S.perfil; const sv=servDe(d,s.serv); const rest=sv.mem?cupoRestante():0; if(!sv.mem&&s.metodo==='membresia') s.metodo='consultorio';
     const pacientes=[P.nombre,...(P.plan==='familiar'?(P.miembros||[]).map(m=>m.nombre):[])];
     return sheetFrame('Confirma tu cita',`${pasos(2)}
       <div class="card elev row">${avatar(d,'sm')}<div style="min-width:0;flex:1"><b>${esc(d.nombre)}</b><p class="small muted">${esc(d.esp)}</p></div></div>
-      <div class="card elev"><dl class="kv"><dt>Fecha</dt><dd>${esc(cap(fmtLarga(s.fecha)))}</dd><dt>Hora</dt><dd class="num">${esc(s.hora)}</dd><dt>Modalidad</dt><dd>${esc(s.modo)}</dd><dt>${s.modo==='Videoconsulta'?'Acceso':'Lugar'}</dt><dd>${s.modo==='Videoconsulta'?'Enlace seguro en la app':esc(d.dir)}</dd></dl></div>
+      <div class="card elev"><dl class="kv"><dt>Servicio</dt><dd>${esc(sv.n)}</dd><dt>Fecha</dt><dd>${esc(cap(fmtLarga(s.fecha)))}</dd><dt>Hora</dt><dd class="num">${esc(s.hora)}</dd><dt>Modalidad</dt><dd>${esc(s.modo)}</dd><dt>${s.modo==='Videoconsulta'?'Acceso':'Lugar'}</dt><dd>${s.modo==='Videoconsulta'?'Enlace seguro en la app':esc(d.dir)}</dd></dl></div>
       <div class="field"><label for="b-pac">¿Quién es el paciente?</label><select class="input" id="b-pac">${pacientes.map(p=>`<option ${s.paciente===p?'selected':''}>${esc(p)}</option>`).join('')}</select></div>
       <div class="field"><label for="b-mot">Motivo de la consulta <span class="muted">(opcional)</span></label><textarea class="input" id="b-mot" maxlength="300" placeholder="Ej. revisión anual, dolor de cabeza frecuente">${esc(s.motivo||'')}</textarea><span class="small muted">Solo lo verá tu médico.</span></div>
       <div class="field"><span class="label">Forma de pago</span>
-        <label class="opt"><input type="radio" name="metodo" value="membresia" ${s.metodo==='membresia'?'checked':''} ${rest?'':'disabled'}><span><b>Usar mi membresía</b><span class="small muted" style="display:block">${P.plan?(rest?`Te ${rest===1?'queda 1 consulta':'quedan '+rest+' consultas'} este mes · $0`:'Ya usaste tus consultas de este mes'):'Activa un plan desde $300 al mes'}</span></span></label>
-        <label class="opt"><input type="radio" name="metodo" value="consultorio" ${s.metodo==='consultorio'?'checked':''}><span><b>Pagar en consultorio</b><span class="small muted" style="display:block">${money(d.precio)} MXN · efectivo o tarjeta${d.seguros.length?' · acepta '+esc(d.seguros.join(', ')):''}</span></span></label>
+        <label class="opt"><input type="radio" name="metodo" value="membresia" ${s.metodo==='membresia'?'checked':''} ${rest?'':'disabled'}><span><b>Usar mi membresía</b><span class="small muted" style="display:block">${!sv.mem?'Este servicio no está incluido en la membresía':P.plan?(rest?`Te ${rest===1?'queda 1 consulta':'quedan '+rest+' consultas'} este mes · $0`:'Ya usaste tus consultas de este mes'):'Activa un plan desde $300 al mes'}</span></span></label>
+        <label class="opt"><input type="radio" name="metodo" value="consultorio" ${s.metodo==='consultorio'?'checked':''}><span><b>Pagar en consultorio</b><span class="small muted" style="display:block">${money(sv.p)} MXN · efectivo o tarjeta${d.seguros.length?' · acepta '+esc(d.seguros.join(', ')):''}</span></span></label>
       </div>
       ${s.error?`<p class="err">${esc(s.error)}</p>`:''}
       <p class="small muted">Al confirmar, compartes tu nombre y motivo solo con ${esc(d.nombre)}. Cancelación sin costo hasta 24 h antes.</p>`,
-      `<div class="grow"><span class="small muted">Total</span><div class="price num">${s.metodo==='membresia'?'$0':money(d.precio)}</div></div><button class="btn btn-primary" data-act="confirmar" ${s.busy?'disabled':''}>${s.busy?'Confirmando…':(s.reprogramar?'Confirmar cambio':'Confirmar cita')}</button>`,'atrasDoc');
+      `<div class="grow"><span class="small muted">Total</span><div class="price num">${s.metodo==='membresia'?'$0':money(sv.p)}</div></div><button class="btn btn-primary" data-act="confirmar" ${s.busy?'disabled':''}>${s.busy?'Confirmando…':(s.reprogramar?'Confirmar cambio':'Confirmar cita')}</button>`,'atrasDoc');
   }
   const dias=proximosDias(14);
   const res=S.resenas.filter(r=>r.doctorId===d.id).sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
   return sheetFrame(s.reprogramar?'Elige un nuevo horario':'Perfil del profesional',`
     <section class="row" style="gap:14px;align-items:flex-start">${avatar(d,'lg')}<div class="stack" style="gap:4px;min-width:0">
-      <h2>${esc(d.nombre)}</h2><p class="muted">${esc(d.esp)}</p>
+      <div class="row" style="gap:8px;align-items:flex-start"><h2 style="flex:1">${esc(d.nombre)}</h2><button class="fav-btn static" data-act="fav" data-v="${d.id}" aria-pressed="${(S.perfil.favoritos||[]).includes(d.id)}" aria-label="Guardar en favoritos">${heart((S.perfil.favoritos||[]).includes(d.id))}</button></div><p class="muted">${esc(d.esp)}</p>
       <div class="row wrap" style="gap:6px"><span class="tag blue">${I.verified} Cédula verificada</span>${c?`<span class="tag"><span class="stars">★ ${c.prom.toFixed(1)}</span>&nbsp;${c.n} ${c.n===1?'opinión':'opiniones'}</span>`:'<span class="tag">Sin opiniones aún</span>'}</div>
     </div></section>
     <div class="card elev"><dl class="kv">
-      <dt>Cédula profesional</dt><dd class="num">${esc(d.cedula)}</dd><dt>Formación</dt><dd>${esc(d.uni)}</dd><dt>Experiencia</dt><dd>${d.exp} años</dd><dt>Idiomas</dt><dd>${esc(d.idiomas.join(', '))}</dd><dt>Consulta</dt><dd class="num">${money(d.precio)} MXN</dd>
+      <dt>Cédula profesional</dt><dd class="num">${esc(d.cedula)}</dd><dt>Formación</dt><dd>${esc(d.uni)}</dd><dt>Experiencia</dt><dd>${d.exp} años</dd><dt>Idiomas</dt><dd>${esc(d.idiomas.join(', '))}</dd>
     </dl></div>
     <p>${esc(d.bio)}</p>
+    <section class="stack" style="gap:8px"><h3>Padecimientos que atiende</h3><div class="row wrap" style="gap:6px">${d.pad.map(x=>`<span class="tag ok">${esc(x)}</span>`).join('')}</div></section>
+    <section class="stack" style="gap:8px"><div class="section-head"><h3>Servicios y precios</h3><span class="small muted">Elige uno para agendar</span></div>
+      <div class="serv-list" role="radiogroup" aria-label="Servicio">${d.servicios.map(x=>`<label class="serv ${s.serv===x.id?'on':''}"><input type="radio" name="serv" value="${x.id}" ${s.serv===x.id?'checked':''}><span class="grow"><b>${esc(x.n)}</b><span class="small muted" style="display:block">${x.min} min${x.mem?' · incluida en membresía':''}</span></span><span class="price num">${money(x.p)}</span></label>`).join('')}</div>
+    </section>
     <div class="row" style="align-items:flex-start;gap:8px">${I.pin.replace('<svg','<svg style="width:18px;height:18px;flex:none;margin-top:2px;color:var(--brand)"')}<span class="small">${esc(d.dir)} · ${d.km} km</span></div>
     ${d.seguros.length?`<div class="row wrap" style="gap:6px"><span class="small muted">Acepta:</span>${d.seguros.map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div>`:'<p class="small muted">No trabaja con aseguradoras.</p>'}
     <section class="stack" id="agenda"><h3>Agenda tu cita</h3>
@@ -922,9 +983,9 @@ function sheetDoctor(s){
       <div id="slotBox">${slotsHTML(d,s)}</div>
     </section>
     <section class="stack" style="gap:0"><div class="section-head"><h3>Opiniones de pacientes</h3><span class="small muted">Solo con cita atendida</span></div>
-      ${res.length?res.slice(0,6).map(r=>`<div class="review"><div class="row between"><span class="stars">${'★'.repeat(r.estrellas)}<span style="color:var(--line)">${'★'.repeat(5-r.estrellas)}</span></span><span class="small muted">${esc(r.fecha?fmtCorta(r.fecha):'')}</span></div>${r.texto?`<p class="small">${esc(r.texto)}</p>`:''}<span class="small muted">Paciente verificado</span></div>`).join(''):`<p class="small muted" style="padding-top:8px">Todavía no hay opiniones. Las opiniones solo se publican después de una consulta atendida.</p>`}
+      ${res.length?`<div class="rev-sum"><div class="rev-big"><b class="num">${c.prom.toFixed(1)}</b>${estrellas(Math.round(c.prom))}<span class="small muted">${c.n} ${c.n===1?'opinión':'opiniones'}</span></div><div class="rev-bars">${califCats(d.id).map(x=>`<div class="rev-bar"><span class="small">${x.l}</span><span class="bar"><i style="width:${x.prom?x.prom/5*100:0}%"></i></span><span class="small num">${x.prom?x.prom.toFixed(1):'—'}</span></div>`).join('')}</div></div>`+res.slice(0,8).map(r=>`<div class="review"><div class="row between">${estrellas(r.estrellas)}<span class="small muted">${esc(r.fecha?fmtCorta(r.fecha):'')}</span></div>${CATS.some(([k])=>r[k])?`<span class="small muted">${CATS.filter(([k])=>r[k]).map(([k,l])=>`${l} ${r[k]}/5`).join(' · ')}</span>`:''}${r.texto?`<p class="small">${esc(r.texto)}</p>`:''}<span class="small muted">${I.verified.replace('<svg','<svg style="width:13px;height:13px;color:var(--blue);vertical-align:-2px"')} Paciente verificado</span>${r.respuesta?`<div class="reply"><b class="small">Respuesta de ${esc(d.nombre)}</b><p class="small">${esc(r.respuesta)}</p></div>`:''}</div>`).join(''):`<p class="small muted" style="padding-top:8px">Todavía no hay opiniones. Las opiniones solo se publican después de una consulta atendida.</p>`}
     </section>`,
-    `<div class="grow"><span class="small muted">${s.hora?esc(relDia(s.fecha))+' · '+esc(s.hora):'Elige un horario'}</span><div class="price num">${money(d.precio)}</div></div><button class="btn btn-primary" id="ctaDoc" data-act="continuar" ${s.hora?'':'disabled'}>Continuar</button>`);
+    `<div class="grow"><span class="small muted">${s.hora?esc(relDia(s.fecha))+' · '+esc(s.hora):'Elige un horario'}</span><div class="price num" id="docPrice">${money(servDe(d,s.serv).p)}</div></div><button class="btn btn-primary" id="ctaDoc" data-act="continuar" ${s.hora?'':'disabled'}>Continuar</button>`);
 }
 function sheetPlan(s){
   const p=PLANES[s.plan];
@@ -980,7 +1041,8 @@ function sheetBorrar(){
 function sheetOpinar(s){
   const c=S.citas.find(x=>x.id===s.citaId); const d=docById(c.doctorId);
   return sheetFrame('Califica tu consulta',`<div class="card elev row">${avatar(d,'sm')}<div><b>${esc(d.nombre)}</b><p class="small muted">${esc(fmtLarga(c.fecha))}</p></div></div>
-    <div class="field"><span class="label">Tu calificación</span><div class="rate" role="group" aria-label="Estrellas">${[1,2,3,4,5].map(n=>`<button data-act="estrella" data-v="${n}" class="${n<=(s.estrellas||0)?'on':''}" aria-label="${n} estrellas">★</button>`).join('')}</div></div>
+    <div class="field"><span class="label">Calificación general</span><div class="rate" role="group" aria-label="Calificación general">${[1,2,3,4,5].map(n=>`<button data-act="estrella" data-v="${n}" class="${n<=(s.estrellas||0)?'on':''}" aria-label="${n} estrellas">★</button>`).join('')}</div></div>
+    <div class="card cats">${CATS.map(([k,l])=>`<div class="cat-row"><span>${l}</span><div class="rate sm" role="group" aria-label="${l}">${[1,2,3,4,5].map(n=>`<button data-act="cat" data-v="${k}|${n}" class="${n<=(s[k]||0)?'on':''}" aria-label="${l}: ${n} de 5">★</button>`).join('')}</div></div>`).join('')}</div>
     <div class="field"><label for="r-txt">Cuéntanos tu experiencia <span class="muted">(opcional)</span></label><textarea class="input" id="r-txt" maxlength="400" placeholder="Puntualidad, trato, claridad de la explicación…">${esc(s.texto||'')}</textarea></div>
     <p class="small muted">Tu opinión se publica como “Paciente verificado”, sin tu nombre.</p>`,
     `<button class="btn btn-ghost grow" data-act="close">Cancelar</button><button class="btn btn-primary grow" data-act="publicarResena" ${s.estrellas?'':'disabled'}>Publicar opinión</button>`);
@@ -1001,18 +1063,37 @@ function portalBody(s){
     <div class="stats"><div class="card stat"><span class="small muted">Citas 7 días</span><b class="num">${res}</b></div><div class="card stat"><span class="small muted">Ocupación</span><b class="num">${total?Math.round(res/total*100):0}%</b></div><div class="card stat"><span class="small muted">Calificación</span><b class="num">${c?c.prom.toFixed(1):'—'}</b></div></div>
     <p class="small muted">Toca un horario disponible para bloquearlo (vacaciones, cirugía, comida). Toca uno bloqueado para liberarlo.</p>
     ${blocks}
+    <section class="stack" style="gap:8px"><h3>Opiniones de tus pacientes</h3>${(()=>{const rs=S.resenas.filter(r=>r.doctorId===d.id).sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+      if(!rs.length) return '<p class="small muted">Aún no tienes opiniones. Aparecen aquí cuando un paciente califica su consulta.</p>';
+      return rs.map(r=>`<div class="card stack" style="gap:6px"><div class="row between">${estrellas(r.estrellas)}<span class="small muted">${esc(r.fecha?fmtCorta(r.fecha):'')}</span></div>${r.texto?`<p class="small">${esc(r.texto)}</p>`:''}
+        ${r.respuesta?`<div class="reply"><b class="small">Tu respuesta</b><p class="small">${esc(r.respuesta)}</p></div>`:`<textarea class="input" id="rsp-${r.id}" maxlength="600" placeholder="Agradece o aclara algo, con respeto y sin datos del paciente."></textarea><button class="btn btn-soft btn-sm" data-act="responder" data-v="${r.id}">Publicar respuesta</button>`}</div>`).join('')})()}</section>
     <p class="small muted">Por privacidad, en esta demo el médico solo ve horario y modalidad. En producción recibiría nombre y motivo del paciente a través de un expediente cifrado.</p>`;
 }
 function sheetPortal(s){return sheetFrame('Portal médico',portalBody(s),'')}
 
 /* ============ Acciones ============ */
 function toast(msg){const r=$('#toastRoot');r.innerHTML=`<div class="toast" role="status">${esc(msg)}</div>`;clearTimeout(toast.t);toast.t=setTimeout(()=>r.innerHTML='',2800)}
+function calFechas(c){const [H,M]=c.hora.split(':').map(Number);const st=parseYmd(c.fecha);st.setHours(H,M,0,0);const en=new Date(st.getTime()+(c.min||30)*60000);
+  const f=d=>`${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;return [f(st),f(en)]}
+function calTexto(c){const d=docById(c.doctorId);return {titulo:`Cita con ${d.nombre} · Health Digital`,detalle:`${c.servicio||d.esp} · ${c.modalidad}. Folio ${c.folio||''}. ${c.modalidad==='Videoconsulta'?'El enlace se activa en la app 15 minutos antes.':'Llega 10 minutos antes.'}`,lugar:c.modalidad==='Videoconsulta'?'Videoconsulta en Health Digital':d.dir}}
+function calendarioHTML(c){
+  const [a,b]=calFechas(c); const t=calTexto(c);
+  const g='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(t.titulo)+'&dates='+a+'/'+b+'&ctz=America/Mexico_City&details='+encodeURIComponent(t.detalle)+'&location='+encodeURIComponent(t.lugar);
+  const dentroDeClaude=!!(window.claude&&window.claude.use);
+  return `<div class="cal-add"><span class="small muted">Agregar a tu calendario</span><div class="row wrap" style="gap:8px"><a class="btn btn-ghost btn-sm" href="${g}" target="_blank" rel="noopener">${I.cal} Google Calendar</a>${dentroDeClaude?'':`<button class="btn btn-ghost btn-sm" data-act="ics" data-v="${esc(JSON.stringify({doctorId:c.doctorId,fecha:c.fecha,hora:c.hora,modalidad:c.modalidad,servicio:c.servicio,folio:c.folio,min:c.min}))}">${I.cal} Apple / Outlook</button>`}</div></div>`;
+}
+function descargarICS(c){
+  const [a,b]=calFechas(c); const t=calTexto(c); const x=s=>String(s).replace(/[\\,;]/g,m=>'\\'+m);
+  const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Health Digital//Citas//ES','BEGIN:VEVENT','UID:'+(c.folio||uid())+'@healthdigital','DTSTAMP:'+new Date().toISOString().replace(/[-:]/g,'').slice(0,15)+'Z','DTSTART;TZID=America/Mexico_City:'+a,'DTEND;TZID=America/Mexico_City:'+b,'SUMMARY:'+x(t.titulo),'DESCRIPTION:'+x(t.detalle),'LOCATION:'+x(t.lugar),'BEGIN:VALARM','TRIGGER:-PT2H','ACTION:DISPLAY','DESCRIPTION:Recordatorio de tu cita','END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n');
+  const url=URL.createObjectURL(new Blob([ics],{type:'text/calendar'})); const el=document.createElement('a'); el.href=url; el.download='cita-health-digital.ics'; document.body.appendChild(el); el.click(); el.remove(); setTimeout(()=>URL.revokeObjectURL(url),4000);
+}
 function nuevoFolio(){return 'HD'+Date.now().toString(36).toUpperCase().slice(-6)}
 
 async function confirmarCita(){
-  const s=S.sheet; const d=docById(s.id);
+  const s=S.sheet; const d=docById(s.id); const sv=servDe(d,s.serv);
   s.paciente=$('#b-pac').value; s.motivo=$('#b-mot').value.trim();
   const m=document.querySelector('input[name="metodo"]:checked'); s.metodo=m?m.value:'consultorio';
+  if(s.metodo==='membresia'&&!sv.mem){s.error='Este servicio no está incluido en la membresía.';renderSheet();return}
   if(s.metodo==='membresia'&&!cupoRestante()&&!(s.reprogramar&&S.citas.find(c=>c.id===s.reprogramar)?.cubierta)){s.error='Ya no te quedan consultas incluidas este mes.';renderSheet();return}
   s.busy=true; s.error=''; renderSheet();
   const key=slotKey(d.id,s.fecha,s.hora);
@@ -1021,12 +1102,12 @@ async function confirmarCita(){
     if(!ok){s.busy=false;s.paso='elegir';s.hora=null;renderSheet();toast('Alguien acaba de reservar ese horario. Elige otro.');return}
     if(s.reprogramar){
       const old=S.citas.find(c=>c.id===s.reprogramar);
-      await ST.updateCita(old.id,{fecha:s.fecha,hora:s.hora,modalidad:s.modo,paciente:s.paciente,motivo:s.motivo,slot:key,cubierta:s.metodo==='membresia',precio:d.precio});
+      await ST.updateCita(old.id,{fecha:s.fecha,hora:s.hora,modalidad:s.modo,paciente:s.paciente,motivo:s.motivo,slot:key,cubierta:s.metodo==='membresia',precio:sv.p,servicio:sv.n});
       if(old.slot&&old.slot!==key){try{await ST.release(old.slot)}catch(e){}}
       s.folio=old.folio;
     }else{
       s.folio=nuevoFolio();
-      await ST.addCita({doctorId:d.id,fecha:s.fecha,hora:s.hora,modalidad:s.modo,paciente:s.paciente,motivo:s.motivo,estado:'confirmada',cubierta:s.metodo==='membresia',precio:d.precio,slot:key,folio:s.folio,creada:new Date().toISOString()});
+      await ST.addCita({doctorId:d.id,fecha:s.fecha,hora:s.hora,modalidad:s.modo,paciente:s.paciente,motivo:s.motivo,estado:'confirmada',cubierta:s.metodo==='membresia',precio:sv.p,servicio:sv.n,slot:key,folio:s.folio,creada:new Date().toISOString()});
     }
     s.busy=false; s.paso='listo'; renderSheet();
   }catch(e){s.busy=false;s.error='No se pudo confirmar la cita. Revisa tu conexión e inténtalo de nuevo.';renderSheet()}
@@ -1040,11 +1121,16 @@ document.addEventListener('click',async e=>{
     case 'tab': S.tab=v; S.confirmCancel=null; closeSheet(); render(); window.scrollTo(0,0); break;
     case 'esp': S.f.esp=v; document.querySelectorAll('[data-act="esp"]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v)); $('#results').innerHTML=resultsHTML(); break;
     case 'soloVideo': S.f.modo='Videoconsulta'; render(); $('#results')&&$('#results').scrollIntoView({behavior:'smooth',block:'start'}); toast('Mostrando médicos con videoconsulta.'); break;
-    case 'limpiar': S.f={q:'',esp:'Todas',seguro:'',modo:'',orden:'recomendados'}; render(); break;
+    case 'limpiar': S.f={q:'',esp:'Todas',seguro:'',modo:'',orden:'recomendados',disp:'',precio:'',fav:false}; render(); break;
+    case 'disp': S.f.disp=S.f.disp===v?'':v; render(true); break;
+    case 'favFiltro': S.f.fav=!S.f.fav; render(true); break;
+    case 'fav': {const favs=new Set(S.perfil.favoritos||[]); const on=!favs.has(v); on?favs.add(v):favs.delete(v);
+      document.querySelectorAll(`[data-act="fav"][data-v="${v}"]`).forEach(b=>{b.setAttribute('aria-pressed',on);b.innerHTML=heart(on)});
+      try{await ST.savePerfil({...S.perfil,favoritos:[...favs]}); toast(on?'Guardado en tus favoritos.':'Quitado de tus favoritos.')}catch(err){toast('No se pudo guardar el favorito.')} break}
     case 'svtipo': S.sv.tipo=v; render(); break;
     case 'citastab': S.citasTab=v; S.confirmCancel=null; render(); break;
-    case 'doctor': {const d=docById(v); const x=proxima(d); openSheet({type:'doctor',id:v,paso:'elegir',fecha:x?x.fecha:hoy(),hora:null,modo:d.modos[0],paciente:S.perfil.nombre,metodo:cupoRestante()?'membresia':'consultorio'}); break}
-    case 'rapido': {const [id,f,h]=v.split('|'); const d=docById(id); openSheet({type:'doctor',id,paso:'confirmar',fecha:f,hora:h,modo:d.modos[0],paciente:S.perfil.nombre,metodo:cupoRestante()?'membresia':'consultorio'}); break}
+    case 'doctor': {const d=docById(v); const x=proxima(d); openSheet({type:'doctor',id:v,serv:'s0',paso:'elegir',fecha:x?x.fecha:hoy(),hora:null,modo:d.modos[0],paciente:S.perfil.nombre,metodo:cupoRestante()?'membresia':'consultorio'}); break}
+    case 'rapido': {const [id,f,h]=v.split('|'); const d=docById(id); openSheet({type:'doctor',id,serv:'s0',paso:'confirmar',fecha:f,hora:h,modo:d.modos[0],paciente:S.perfil.nombre,metodo:cupoRestante()?'membresia':'consultorio'}); break}
     case 'fecha': S.sheet.fecha=v; S.sheet.hora=null; document.querySelectorAll('.day').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v)); $('#slotBox').innerHTML=slotsHTML(docById(S.sheet.id),S.sheet); updDocFoot(); break;
     case 'hora': S.sheet.hora=v; document.querySelectorAll('.slot').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v)); updDocFoot(); break;
     case 'modo': S.sheet.modo=v; document.querySelectorAll('[data-act="modo"]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v)); break;
@@ -1053,14 +1139,16 @@ document.addEventListener('click',async e=>{
     case 'confirmar': confirmarCita(); break;
     case 'verCitas': closeSheet(); S.tab='citas'; S.citasTab='proximas'; render(); window.scrollTo(0,0); break;
     case 'close': closeSheet(); break;
+    case 'ics': try{descargarICS(JSON.parse(v))}catch(err){toast('No se pudo crear el archivo del calendario.')} break;
     case 'cancelar': S.confirmCancel=v; render(true); break;
     case 'cancelarNo': S.confirmCancel=null; render(true); break;
     case 'cancelarSi': {const c=S.citas.find(x=>x.id===v); S.confirmCancel=null; try{await ST.updateCita(v,{estado:'cancelada',canceladaEn:new Date().toISOString()}); if(c.slot) await ST.release(c.slot); toast('Cita cancelada. El horario quedó libre.')}catch(err){toast('No se pudo cancelar. Inténtalo de nuevo.')} break}
-    case 'reprogramar': {const c=S.citas.find(x=>x.id===v); const d=docById(c.doctorId); openSheet({type:'doctor',id:d.id,paso:'elegir',fecha:c.fecha,hora:null,modo:c.modalidad,paciente:c.paciente,motivo:c.motivo,metodo:c.cubierta?'membresia':'consultorio',reprogramar:c.id}); break}
+    case 'reprogramar': {const c=S.citas.find(x=>x.id===v); const d=docById(c.doctorId); openSheet({type:'doctor',id:d.id,serv:(d.servicios.find(x=>x.n===c.servicio)||d.servicios[0]).id,paso:'elegir',fecha:c.fecha,hora:null,modo:c.modalidad,paciente:c.paciente,motivo:c.motivo,metodo:c.cubierta?'membresia':'consultorio',reprogramar:c.id}); break}
     case 'simular': {const c=S.citas.find(x=>x.id===v); try{await ST.updateCita(v,{estado:'completada'}); if(c.slot) await ST.release(c.slot); S.citasTab='historial'; render(); toast('Consulta marcada como atendida. Ya puedes calificarla.')}catch(err){toast('No se pudo actualizar.')} break}
     case 'opinar': openSheet({type:'opinar',citaId:v,estrellas:0,texto:''}); break;
     case 'estrella': S.sheet.texto=$('#r-txt').value; S.sheet.estrellas=Number(v); renderSheet(); break;
-    case 'publicarResena': {const s=S.sheet; const c=S.citas.find(x=>x.id===s.citaId); try{await ST.addResena({doctorId:c.doctorId,citaId:c.id,estrellas:s.estrellas,texto:$('#r-txt').value.trim().slice(0,400),fecha:hoy()}); closeSheet(); toast('¡Gracias! Tu opinión ya está publicada.')}catch(err){toast('No se pudo publicar. Inténtalo de nuevo.')} break}
+    case 'cat': {const [k,n]=v.split('|'); S.sheet.texto=$('#r-txt').value; S.sheet[k]=Number(n); renderSheet(); break}
+    case 'publicarResena': {const s=S.sheet; const c=S.citas.find(x=>x.id===s.citaId); try{await ST.addResena({doctorId:c.doctorId,citaId:c.id,estrellas:s.estrellas,puntualidad:s.puntualidad||null,trato:s.trato||null,instalaciones:s.instalaciones||null,texto:$('#r-txt').value.trim().slice(0,400),fecha:hoy()}); closeSheet(); toast('¡Gracias! Tu opinión ya está publicada.')}catch(err){toast('No se pudo publicar. Inténtalo de nuevo.')} break}
     case 'plan': openSheet({type:'plan',plan:v}); break;
     case 'activarPlan': {const P={...S.perfil}; const cambio=!!P.plan; P.plan=v; if(!P.socio)P.socio=socioNum(); if(!cambio)P.renovacion=sumarMes(new Date().toISOString()); if(!P.renovacion)P.renovacion=sumarMes(new Date().toISOString()); if(v==='individual')P.miembros=[]; try{await ST.savePerfil(P); closeSheet(); toast(cambio?'Plan actualizado.':'¡Membresía activada! Ya tienes tu credencial digital.')}catch(err){toast('No se pudo activar el plan.')} break}
     case 'cancelarPlan': {const P={...S.perfil,plan:null,miembros:[]}; try{await ST.savePerfil(P); toast('Membresía cancelada. Puedes volver a activarla cuando quieras.')}catch(err){toast('No se pudo cancelar.')} break}
@@ -1085,6 +1173,8 @@ document.addEventListener('click',async e=>{
     case 'borrarSi': try{await ST.borrarTodo(); closeSheet(); S.tab='descubrir'; toast('Tus datos se eliminaron.')}catch(err){toast('No se pudieron eliminar todos los datos. Inténtalo de nuevo.')} break;
     case 'authModo': S.auth={modo:v,email:S.auth&&S.auth.email}; showAuth(); break;
     case 'logout': try{await S.sb.auth.signOut()}catch(err){toast('No se pudo cerrar sesión.')} break;
+    case 'responder': {const el=$('#rsp-'+v); const tx=(el&&el.value||'').trim(); if(tx.length<5){toast('Escribe una respuesta un poco más larga.');break}
+      try{await ST.responder(v,tx.slice(0,600)); toast('Respuesta publicada.'); refreshSheetSlots()}catch(err){toast(err&&err.code==='no_medico'?'Solo el médico vinculado a este perfil puede responder.':'No se pudo publicar la respuesta.')} break}
     case 'portal': openSheet({type:'portal',docId:DOCTORES[0].id}); break;
     case 'bloquear': case 'desbloquear': {const [f,h]=v.split('|'); const key=slotKey(S.sheet.docId,f,h);
       try{ if(a==='bloquear'){const ok=await ST.claim(key,{doctorId:S.sheet.docId,fecha:f,hora:h,tipo:'bloqueo',creada:new Date().toISOString()}); if(!ok) toast(S.store.modo==='supabase'?'Solo el médico vinculado a esta agenda puede bloquear horarios.':'Ese horario ya no está disponible.')} else await ST.release(key)}catch(err){toast('No se pudo actualizar la agenda.')} break}
@@ -1100,9 +1190,11 @@ document.addEventListener('change',e=>{
   const id=e.target.id;
   if(id==='f-seguro'){S.f.seguro=e.target.value;e.target.classList.toggle('on',!!e.target.value);$('#results').innerHTML=resultsHTML()}
   if(id==='f-modo'){S.f.modo=e.target.value;e.target.classList.toggle('on',!!e.target.value);$('#results').innerHTML=resultsHTML()}
+  if(id==='f-precio'){S.f.precio=e.target.value;e.target.classList.toggle('on',!!e.target.value);$('#results').innerHTML=resultsHTML()}
   if(id==='f-orden'){S.f.orden=e.target.value;$('#results').innerHTML=resultsHTML()}
   if(id==='b-pac'&&S.sheet) S.sheet.paciente=e.target.value;
-  if(e.target.name==='metodo'&&S.sheet){S.sheet.metodo=e.target.value;const p=document.querySelector('.sheet-foot .price');if(p)p.textContent=e.target.value==='membresia'?'$0':money(docById(S.sheet.id).precio)}
+  if(e.target.name==='metodo'&&S.sheet){S.sheet.metodo=e.target.value;const p=document.querySelector('.sheet-foot .price');if(p)p.textContent=e.target.value==='membresia'?'$0':money(servDe(docById(S.sheet.id),S.sheet.serv).p)}
+  if(e.target.name==='serv'&&S.sheet){S.sheet.serv=e.target.value;document.querySelectorAll('.serv').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));const pp=$('#docPrice');if(pp)pp.textContent=money(servDe(docById(S.sheet.id),S.sheet.serv).p)}
   if(id==='pt-doc'&&S.sheet){S.sheet.docId=e.target.value;refreshSheetSlots()}
 });
 document.addEventListener('submit',async e=>{
