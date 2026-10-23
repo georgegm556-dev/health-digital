@@ -1,6 +1,7 @@
 // Health Digital · Función "stripe-webhook"
 // Stripe avisa aquí cada vez que una suscripción se crea, se renueva, cambia, falla o se cancela.
 // Esta función es la ÚNICA que activa o desactiva membresías en la base de datos.
+// También registra la tarjeta de los médicos y el resultado de los cobros de comisión.
 //
 // Secretos necesarios (Supabase → Edge Functions → Secrets):
 //   STRIPE_SECRET_KEY       clave secreta de Stripe
@@ -68,6 +69,20 @@ Deno.serve(async (req) => {
     switch (evento.type) {
       case "checkout.session.completed": {
         const s = evento.data.object as Stripe.Checkout.Session;
+        // Médico registró su tarjeta para la comisión mensual
+        if (s.mode === "setup" && s.metadata?.tipo === "medico" && s.setup_intent) {
+          const si = await stripe.setupIntents.retrieve(String(s.setup_intent));
+          const pm = typeof si.payment_method === "string" ? si.payment_method : si.payment_method?.id;
+          const customer = typeof s.customer === "string" ? s.customer : s.customer?.id;
+          if (pm && customer) {
+            await stripe.customers.update(customer, { invoice_settings: { default_payment_method: pm } });
+            const { error } = await admin.from("doctores")
+              .update({ tarjeta_ok: true, suspendido: false, stripe_payment_method: pm, stripe_customer_id: customer })
+              .eq("id", s.metadata.doctor_id);
+            if (error) throw error;
+          }
+          break;
+        }
         if (s.mode === "subscription" && s.subscription) {
           const sub = await stripe.subscriptions.retrieve(String(s.subscription));
           if (!sub.metadata?.user_id && s.client_reference_id) {
@@ -82,6 +97,23 @@ Deno.serve(async (req) => {
       case "customer.subscription.deleted":
         await sincronizar(evento.data.object as Stripe.Subscription);
         break;
+      // Cobro mensual de comisiones a médicos
+      case "payment_intent.succeeded":
+      case "payment_intent.payment_failed": {
+        const pi = evento.data.object as Stripe.PaymentIntent;
+        const cobro = pi.metadata?.cobro_id;
+        if (cobro) {
+          const ok = evento.type === "payment_intent.succeeded";
+          await admin.from("cobros_medicos")
+            .update({ estado: ok ? "pagado" : "fallido", stripe_payment_intent: pi.id,
+                      error: ok ? null : (pi.last_payment_error?.message ?? "Pago rechazado") })
+            .eq("id", cobro);
+          if (!ok && pi.metadata?.doctor_id) {
+            await admin.from("doctores").update({ suspendido: true }).eq("id", pi.metadata.doctor_id);
+          }
+        }
+        break;
+      }
       case "invoice.paid":
       case "invoice.payment_failed": {
         const inv = evento.data.object as Stripe.Invoice;

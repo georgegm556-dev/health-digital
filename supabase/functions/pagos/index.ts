@@ -1,6 +1,6 @@
 // Health Digital · Función "pagos"
-// Crea el pago de la membresía en Stripe, cambia de plan, abre el portal del cliente
-// y cancela la suscripción. La llama la app con la sesión del paciente.
+// Crea el pago de la membresía en Stripe, cambia de plan, abre el portal del cliente,
+// cancela la suscripción y registra la tarjeta de los médicos. La llama la app con la sesión del usuario.
 //
 // Secretos necesarios (Supabase → Edge Functions → Secrets):
 //   STRIPE_SECRET_KEY   clave secreta de Stripe (sk_test_... o sk_live_...)
@@ -48,6 +48,39 @@ Deno.serve(async (req) => {
   let body: { accion?: string; plan?: string } = {};
   try { body = await req.json(); } catch { /* cuerpo vacío */ }
   const accion = body.accion ?? "";
+
+  // Médicos: registrar la tarjeta donde se cobrará la comisión mensual (no se cobra nada al registrarla).
+  if (accion === "tarjeta_medico") {
+    try {
+      const { data: doc } = await admin.from("doctores")
+        .select("id, nombre, stripe_customer_id").eq("user_id", user.id).maybeSingle();
+      if (!doc) return json({ error: "Completa tu registro de médico primero." }, 400);
+      let customer = doc.stripe_customer_id as string | null;
+      if (!customer) {
+        const c = await stripe.customers.create({
+          email: user.email ?? undefined, name: doc.nombre,
+          metadata: { tipo: "medico", doctor_id: doc.id, user_id: user.id },
+        });
+        customer = c.id;
+        await admin.from("doctores").update({ stripe_customer_id: customer }).eq("id", doc.id);
+      }
+      const session = await stripe.checkout.sessions.create({
+        mode: "setup",
+        currency: "mxn",
+        customer,
+        payment_method_types: ["card"],
+        metadata: { tipo: "medico", doctor_id: doc.id, user_id: user.id },
+        setup_intent_data: { metadata: { tipo: "medico", doctor_id: doc.id } },
+        locale: "es",
+        success_url: `${SITE}?tarjeta=ok`,
+        cancel_url: `${SITE}?tarjeta=cancelada`,
+      });
+      return json({ url: session.url });
+    } catch (e) {
+      console.error("tarjeta_medico", e);
+      return json({ error: "No se pudo abrir el registro de tarjeta. Inténtalo de nuevo." }, 500);
+    }
+  }
 
   const { data: perfil } = await admin
     .from("perfiles")
