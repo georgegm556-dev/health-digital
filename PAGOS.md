@@ -114,6 +114,7 @@ Con el portal, el paciente cambia su tarjeta, descarga recibos o cancela sin esc
 En Supabase → **SQL Editor → New query**, corre estos dos archivos, uno por uno y en este orden:
 1. `actualizacion-3-pagos.sql`
 2. `actualizacion-4-medicos.sql`
+3. `actualizacion-5-fotos.sql`: foto de perfil, página web y redes de los médicos
 
 Desde ese momento:
 - solo un pago real de Stripe puede activar un plan;

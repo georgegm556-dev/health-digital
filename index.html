@@ -127,6 +127,7 @@ textarea.input{min-height:84px;resize:vertical}
 .quick-acts small{font-size:.74rem;color:var(--muted)}
 .upsell{display:flex;gap:12px;align-items:center;border-radius:16px;padding:14px;background:var(--brand-soft);border:1px solid transparent;text-align:left;width:100%}
 .upsell b{color:var(--brand-ink)}
+.upsell svg{width:20px;height:20px;flex:none;color:var(--muted)}
 .fpill{flex:none;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 13px;font-size:.85rem;font-weight:500;min-height:38px;white-space:nowrap}
 .fpill[aria-pressed="true"]{border-color:var(--brand);background:var(--brand-soft);color:var(--brand-ink)}
 .fpill svg{width:16px;height:16px}
@@ -152,6 +153,17 @@ textarea.input{min-height:84px;resize:vertical}
 .cat-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .rate.sm button{font-size:1.5rem}
 .cal-add{display:flex;flex-direction:column;gap:6px}
+.avatar{position:relative;overflow:hidden}
+.avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.avatar.xl{width:96px;height:96px;border-radius:28px;font-size:1.8rem}
+.foto-ed{display:flex;gap:14px;align-items:center}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.redes-ed{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:380px){.redes-ed{grid-template-columns:1fr}}
+.links{display:flex;flex-wrap:wrap;gap:8px}
+.lnk{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 12px;font-size:.86rem;font-weight:500;color:var(--ink);text-decoration:none;max-width:100%}
+.lnk svg{width:16px;height:16px;color:var(--brand);flex:none}
+.lnk span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rol-pick{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .rol{position:relative;border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:4px;cursor:pointer;background:var(--surface)}
 .rol input{position:absolute;opacity:0;pointer-events:none}
@@ -410,11 +422,31 @@ let DOCS_DB=[];
 const allDocs=()=>{const base=CONFIG.MEDICOS_EJEMPLO?DOCTORES:[];const mine=S.miDoc&&!DOCS_DB.some(d=>d.id===S.miDoc.id)?[mapDoc(S.miDoc)]:[];return [...DOCS_DB,...mine,...base]};
 const especialidades=()=>['Todas',...new Set(allDocs().filter(d=>!d.oculto).map(d=>d.esp))];
 const ESP_LISTA=['Medicina General','Cardiología','Dermatología','Pediatría','Ginecología','Odontología','Psicología','Nutrición','Oftalmología','Traumatología y Ortopedia','Otorrinolaringología','Endocrinología','Gastroenterología','Neurología','Psiquiatría','Urología'];
+const REDES=[['instagram','Instagram','instagram.com/'],['facebook','Facebook','facebook.com/'],['tiktok','TikTok','tiktok.com/@'],['linkedin','LinkedIn','linkedin.com/in/'],['youtube','YouTube','youtube.com/@'],['x','X (Twitter)','x.com/']];
+function urlSegura(u){try{const x=new URL(u);return x.protocol==='https:'&&/\./.test(x.hostname)?x.href:null}catch(e){return null}}
+function normRed(val,dom){let v=String(val||'').trim();if(!v) return '';v=v.replace(/^http:\/\//i,'https://');
+  if(/^https:\/\//i.test(v)){const u=urlSegura(v);const base=dom.split('/')[0];return u&&new URL(u).hostname.replace(/^www\./,'').endsWith(base)?u:null}
+  v=v.replace(/^@/,'').replace(/^(www\.)?/i,'');if(v.toLowerCase().startsWith(dom.split('/')[0])) return urlSegura('https://'+v);
+  return /^[A-Za-z0-9._-]{2,60}$/.test(v)?'https://www.'+dom+v:null}
+function normWeb(val){let v=String(val||'').trim();if(!v) return '';v=v.replace(/^http:\/\//i,'https://');if(!/^https:\/\//i.test(v)) v='https://'+v;return urlSegura(v)}
+function handleDe(url,dom){if(!url) return '';const m=String(url).replace(/^https:\/\/(www\.)?/,'');return m.startsWith(dom)?m.slice(dom.length).replace(/\/$/,''):url}
+async function prepararFoto(file){
+  if(!file||!/^image\//.test(file.type)) throw new Error('Elige una imagen JPG, PNG o WEBP.');
+  if(file.size>15*1024*1024) throw new Error('La imagen pesa más de 15 MB. Elige otra.');
+  const url=URL.createObjectURL(file);
+  try{const img=await new Promise((ok,ko)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>ko(new Error('No se pudo leer la imagen.'));i.src=url});
+    const lado=Math.min(img.naturalWidth,img.naturalHeight); if(lado<120) throw new Error('La imagen es muy pequeña. Usa una de al menos 300 × 300 px.');
+    const c=document.createElement('canvas');c.width=c.height=512;const ctx=c.getContext('2d');
+    ctx.drawImage(img,(img.naturalWidth-lado)/2,(img.naturalHeight-lado)/2,lado,lado,0,0,512,512);
+    const blob=await new Promise(ok=>c.toBlob(ok,'image/jpeg',0.86)); return {blob,preview:c.toDataURL('image/jpeg',0.8)};
+  } finally{URL.revokeObjectURL(url)}
+}
 function iniciales(n){return String(n||'?').replace(/^(Dra?\.|Psic\.|L\.N\.|Mtr[oa]\.|Lic\.)\s*/i,'').split(/\s+/).filter(Boolean).map(x=>x[0]).slice(0,2).join('').toUpperCase()}
 function mapDoc(r){const serv=(r.servicios&&r.servicios.length)?r.servicios:[{id:'s0',n:'Consulta',p:500,min:30,mem:true}];
   return {id:r.id,db:true,nombre:r.nombre,ini:iniciales(r.nombre),color:r.color||'#0B7D91',esp:r.especialidad,cedula:r.cedula,uni:r.universidad||'—',exp:r.experiencia||0,
     zona:r.zona,dir:r.direccion,km:null,seguros:r.seguros||[],modos:r.modos&&r.modos.length?r.modos:['Presencial'],idiomas:r.idiomas&&r.idiomas.length?r.idiomas:['Español'],
     dias:r.dias||[],horas:r.horas||[],bio:r.bio||'',servicios:serv,pad:r.padecimientos||[],precio:serv[0].p,
+    foto:r.fotoUrl||null,web:r.web||null,redes:r.redes||{},
     oculto:!(r.verificado&&r.tarjetaOk&&!r.suspendido)}}
 const SEGUROS = ['GNP','AXA','MetLife','Seguros Monterrey','Bupa'];
 const PROVEEDORES = [
@@ -469,6 +501,8 @@ function sumarMes(iso){const d=new Date(iso);d.setMonth(d.getMonth()+1);return d
 
 /* ============ Iconos ============ */
 const I = {
+  globe:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9S14.5 18.3 12 21c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg>',
+  at:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/></svg>',
   search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
   discover:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>',
   services:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7.5 15h9"/></svg>',
@@ -494,7 +528,7 @@ const I = {
   info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>'
 };
 const heart = on=>`<svg viewBox="0 0 24 24" width="18" height="18" fill="${on?'currentColor':'none'}" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-9-9a4.8 4.8 0 0 1 9-3 4.8 4.8 0 0 1 9 3c-2 4.6-9 9-9 9z"/></svg>`;
-const avatar = (d,cls='')=>`<div class="avatar ${cls}" style="background:${d.color}" aria-hidden="true">${esc(d.ini)}</div>`;
+const avatar = (d,cls='')=>`<div class="avatar ${cls}" style="background:${d.color}" aria-hidden="true">${esc(d.ini)}${d.foto?`<img src="${esc(d.foto)}" alt="" loading="lazy" onerror="this.remove()">`:''}</div>`;
 
 /* ============ Almacenamiento: nube (db) o local ============ */
 const LS_KEY='hd-demo-v1';
@@ -570,7 +604,7 @@ function SupabaseStore(sb,user){
     citas:async()=>chk(await sb.from('citas').select('*').eq('user_id',me)).map(toCamel),
     ocupados:async()=>chk(await sb.from('ocupados').select('id,doctor_id,fecha,hora,modalidad,tipo').gte('fecha',hoy())).map(toCamel),
     resenas:async()=>chk(await sb.from('resenas').select('*')).map(r=>{const x=toCamel(r);delete x.userId;return x}),
-    doctores:async()=>{const {data,error}=await sb.from('doctores').select('id,nombre,especialidad,cedula,universidad,experiencia,zona,direccion,modos,seguros,idiomas,dias,horas,bio,servicios,padecimientos,color,verificado,suspendido,tarjeta_ok');if(error){if(error.code==='42P01'||error.code==='PGRST205')return [];throw error}return data.map(toCamel)},
+    doctores:async()=>{const {data,error}=await sb.from('doctores').select('id,nombre,especialidad,cedula,universidad,experiencia,zona,direccion,modos,seguros,idiomas,dias,horas,bio,servicios,padecimientos,color,verificado,suspendido,tarjeta_ok,foto_url,web,redes');if(error&&error.code==='42703'){const r2=await sb.from('doctores').select('id,nombre,especialidad,cedula,universidad,experiencia,zona,direccion,modos,seguros,idiomas,dias,horas,bio,servicios,padecimientos,color,verificado,suspendido,tarjeta_ok');if(r2.error)throw r2.error;return r2.data.map(toCamel)}if(error){if(error.code==='42P01'||error.code==='PGRST205')return [];throw error}return data.map(toCamel)},
     midoc:async()=>{const {data,error}=await sb.rpc('mi_doctor');if(error){if(error.code==='PGRST202'||error.code==='42883')return null;throw error}return data&&data[0]?toCamel(data[0]):null},
     citasdoc:async()=>{const id=S.miDoc&&S.miDoc.id;if(!id)return [];return chk(await sb.from('citas').select('*').eq('doctor_id',id)).map(toCamel)}
   };
@@ -586,8 +620,11 @@ function SupabaseStore(sb,user){
     modo:'supabase', uid:me, email:user.email||'', rol,
     onDoctores:on('doctores'), onMiDoc:on('midoc'), onCitasDoc:on('citasdoc'),
     async saveDoctor(d,nuevo){const x=toSnake(d);for(const k of ['verificado','suspendido','tarjeta_ok','comision','stripe_customer_id','stripe_payment_method','creado'])delete x[k];
-      if(nuevo){chk(await sb.from('doctores').insert(x))}else{delete x.id;delete x.nombre;delete x.cedula;delete x.user_id;delete x.terminos_aceptados;chk(await sb.from('doctores').update(x).eq('id',d.id))}
+      if(nuevo){chk(await safe(y=>sb.from('doctores').insert(y),x))}else{delete x.id;delete x.nombre;delete x.cedula;delete x.user_id;delete x.terminos_aceptados;chk(await safe(y=>sb.from('doctores').update(y).eq('id',d.id),x))}
       await refetch('midoc');await refetch('doctores')},
+    async subirFoto(blob){const path=me+'/perfil.jpg';const {error}=await sb.storage.from('fotos-medicos').upload(path,blob,{contentType:'image/jpeg',upsert:true,cacheControl:'3600'});
+      if(error) throw error; const {data}=sb.storage.from('fotos-medicos').getPublicUrl(path); return data.publicUrl+'?v='+Date.now()},
+    async borrarFoto(){try{await sb.storage.from('fotos-medicos').remove([me+'/perfil.jpg'])}catch(e){}},
     async marcarAsistencia(id,v){chk(await sb.rpc('marcar_asistencia',{p_cita:id,p_valor:v}));await refetch('citasdoc')},
     async confirmarAsistencia(id,v){chk(await sb.rpc('confirmar_asistencia',{p_cita:id,p_valor:v}));await refetch('citas')},
     async cancelarPorMedico(id){chk(await sb.rpc('cancelar_por_medico',{p_cita:id}));await refetch('citasdoc');await refetch('ocupados')},
@@ -809,7 +846,7 @@ function docCard(d){
     <div class="doc-top">${avatar(d)}
       <div class="doc-main">
         <span class="doc-name">${esc(d.nombre)} <span title="Cédula verificada">${I.verified}</span></span>
-        <span class="muted small">${esc(d.esp)} · ${d.exp} años de experiencia</span>
+        <span class="muted small">${esc(d.esp)}${d.exp?` · ${d.exp} años de experiencia`:''}</span>
         <span class="doc-meta">${c?`<span><span class="stars">★ ${c.prom.toFixed(1)}</span> (${c.n})</span>`:''}<span>${esc(d.zona)}${d.km?` · ${d.km} km`:''}</span><span class="price num">desde ${money(Math.min(...d.servicios.map(x=>x.p)))}</span></span>
       </div>
     </div>
@@ -1025,6 +1062,14 @@ function docFormHTML(d,nuevo){
       <div class="field"><label for="d-bio">Presentación</label><textarea class="input" id="d-bio" maxlength="600" placeholder="Qué atiendes y cómo trabajas con tus pacientes">${esc(d.bio||'')}</textarea></div>
       <div class="field"><label for="d-pad">Padecimientos que atiendes <span class="muted">(separados por coma)</span></label><input class="input" id="d-pad" value="${esc((d.padecimientos||[]).join(', '))}" placeholder="Hipertensión, diabetes, chequeo anual"></div>
     </div>
+    <div class="card elev stack"><h3>Foto y redes</h3>
+      <div class="foto-ed"><div class="avatar xl" id="fotoPrev" style="background:${esc(d.color||'#0B7D91')}">${esc(iniciales(d.nombre||'Dr'))}${(S.foto&&S.foto.preview)||(!S.foto?.quitar&&d.fotoUrl)?`<img src="${esc((S.foto&&S.foto.preview)||d.fotoUrl)}" alt="Tu foto de perfil">`:''}</div>
+        <div class="stack" style="gap:6px;min-width:0"><label class="btn btn-soft btn-sm" for="d-foto" style="cursor:pointer">${I.user} ${d.fotoUrl||S.foto?.preview?'Cambiar foto':'Subir foto'}</label><input type="file" id="d-foto" accept="image/jpeg,image/png,image/webp" class="sr-only">
+        ${(d.fotoUrl&&!S.foto?.quitar)||S.foto?.preview?'<button type="button" class="link small" data-act="fotoQuitar" style="align-self:flex-start;color:var(--danger)">Quitar foto</button>':''}
+        <span class="small muted">Una foto profesional, de frente y con buena luz. Se recorta en cuadrado.</span></div></div>
+      <div class="field"><label for="d-web">Página web <span class="muted">(opcional)</span></label><input class="input" id="d-web" inputmode="url" value="${esc(d.web||'')}" placeholder="www.miconsultorio.com"></div>
+      <div class="redes-ed">${REDES.map(([k,l,dom])=>`<div class="field"><label for="d-red-${k}">${l}</label><input class="input" id="d-red-${k}" value="${esc(handleDe((d.redes||{})[k],dom))}" placeholder="@usuario o enlace"></div>`).join('')}</div>
+    </div>
     <div class="card elev stack"><h3>Consultorio</h3>
       <div class="field"><label for="d-zona">Colonia</label><input class="input" id="d-zona" value="${esc(d.zona||'')}" placeholder="Roma Norte"></div>
       <div class="field"><label for="d-dir">Dirección completa</label><input class="input" id="d-dir" value="${esc(d.direccion||'')}" placeholder="Calle, número, colonia, ciudad"></div>
@@ -1067,7 +1112,9 @@ function leerDocForm(nuevo){
   if(!servicios.length||servicios.some(x=>x.n.length<3||!(x.p>=100&&x.p<=50000))) return err('Cada servicio necesita nombre y un precio entre $100 y $50,000.');
   if(nuevo&&!$('#d-terms').checked) return err('Para continuar, acepta los términos para médicos.');
   const ex=Number(v('d-exp'));
-  return {nombre,cedula:ced,especialidad:v('d-esp'),universidad:v('d-uni')||null,experiencia:Number.isFinite(ex)&&v('d-exp')!==''?ex:null,telefono:tel||null,zona:v('d-zona'),direccion:v('d-dir'),
+  const web=normWeb(v('d-web')); if(web===null) return err('Revisa tu página web. Ejemplo: www.miconsultorio.com');
+  const redes={}; for(const [k,l,dom] of REDES){const r=normRed(v('d-red-'+k),dom); if(r===null) return err(`Revisa tu ${l}: escribe tu usuario (por ejemplo @dra.ana) o el enlace completo.`); if(r) redes[k]=r}
+  return {web:web||null,redes,nombre,cedula:ced,especialidad:v('d-esp'),universidad:v('d-uni')||null,experiencia:Number.isFinite(ex)&&v('d-exp')!==''?ex:null,telefono:tel||null,zona:v('d-zona'),direccion:v('d-dir'),
     modos,seguros:[...document.querySelectorAll('input[name="d-seg"]:checked')].map(i=>i.value),dias,horas,bio:v('d-bio')||null,servicios,
     padecimientos:v('d-pad').split(',').map(x=>x.trim()).filter(Boolean).slice(0,15)};
 }
@@ -1228,10 +1275,11 @@ function sheetDoctor(s){
       <div class="row wrap" style="gap:6px"><span class="tag blue">${I.verified} Cédula verificada</span>${c?`<span class="tag"><span class="stars">★ ${c.prom.toFixed(1)}</span>&nbsp;${c.n} ${c.n===1?'opinión':'opiniones'}</span>`:'<span class="tag">Sin opiniones aún</span>'}</div>
     </div></section>
     <div class="card elev"><dl class="kv">
-      <dt>Cédula profesional</dt><dd class="num">${esc(d.cedula)}</dd><dt>Formación</dt><dd>${esc(d.uni)}</dd><dt>Experiencia</dt><dd>${d.exp} años</dd><dt>Idiomas</dt><dd>${esc(d.idiomas.join(', '))}</dd>
+      <dt>Cédula profesional</dt><dd class="num">${esc(d.cedula)}</dd><dt>Formación</dt><dd>${esc(d.uni)}</dd><dt>Experiencia</dt><dd>${d.exp?d.exp+' años':'—'}</dd><dt>Idiomas</dt><dd>${esc(d.idiomas.join(', '))}</dd>
     </dl></div>
     <p>${esc(d.bio)}</p>
-    <section class="stack" style="gap:8px"><h3>Padecimientos que atiende</h3><div class="row wrap" style="gap:6px">${d.pad.map(x=>`<span class="tag ok">${esc(x)}</span>`).join('')}</div></section>
+    ${d.web||Object.keys(d.redes||{}).length?`<section class="stack" style="gap:8px"><h3>Encuéntrame en</h3><div class="links">${d.web?`<a class="lnk" href="${esc(d.web)}" target="_blank" rel="noopener nofollow ugc">${I.globe}<span>${esc(new URL(d.web).hostname.replace(/^www\./,''))}</span></a>`:''}${REDES.filter(([k])=>(d.redes||{})[k]).map(([k,l])=>`<a class="lnk" href="${esc(d.redes[k])}" target="_blank" rel="noopener nofollow ugc">${I.at}<span>${l}</span></a>`).join('')}</div></section>`:''}
+    ${d.pad.length?`<section class="stack" style="gap:8px"><h3>Padecimientos que atiende</h3><div class="row wrap" style="gap:6px">${d.pad.map(x=>`<span class="tag ok">${esc(x)}</span>`).join('')}</div></section>`:''}
     <section class="stack" style="gap:8px"><div class="section-head"><h3>Servicios y precios</h3><span class="small muted">Elige uno para agendar</span></div>
       <div class="serv-list" role="radiogroup" aria-label="Servicio">${d.servicios.map(x=>`<label class="serv ${s.serv===x.id?'on':''}"><input type="radio" name="serv" value="${x.id}" ${s.serv===x.id?'checked':''}><span class="grow"><b>${esc(x.n)}</b><span class="small muted" style="display:block">${x.min} min${x.mem?' · incluida en membresía':''}</span></span><span class="price num">${money(x.p)}</span></label>`).join('')}</div>
     </section>
@@ -1453,6 +1501,7 @@ document.addEventListener('click',async e=>{
     case 'docTarjeta': try{t.disabled=true;const r=await llamarPagos({accion:'tarjeta_medico'});if(r.url) location.href=r.url}catch(err){toast(err.message)}finally{t.disabled=false} break;
     case 'cuentaMes': S.cuentaOff=Number(v); render(true); break;
     case 'terminosMed': e.preventDefault(); openSheet({type:'terminosMed'}); break;
+    case 'fotoQuitar': S.foto={quitar:true}; {const pv=$('#fotoPrev'); pv&&pv.querySelector('img')&&pv.querySelector('img').remove(); t.remove()} break;
     case 'servAdd': {const box=$('#servEd'); const i=box.children.length; if(i>=8){toast('Máximo 8 servicios.');break} box.insertAdjacentHTML('beforeend',servRow({n:'',p:'',min:30,mem:true},i)); break}
     case 'servDel': {const r=document.querySelector(`.serv-ed[data-i="${v}"]`); r&&r.remove(); break}
     case 'portal': openSheet({type:'portal',docId:allDocs()[0].id}); break;
@@ -1474,6 +1523,7 @@ document.addEventListener('change',e=>{
   if(id==='f-orden'){S.f.orden=e.target.value;$('#results').innerHTML=resultsHTML()}
   if(id==='b-pac'&&S.sheet) S.sheet.paciente=e.target.value;
   if(e.target.name==='metodo'&&S.sheet){S.sheet.metodo=e.target.value;const p=document.querySelector('.sheet-foot .price');if(p)p.textContent=e.target.value==='membresia'?'$0':money(servDe(docById(S.sheet.id),S.sheet.serv).p)}
+  if(id==='d-foto'){const f=e.target.files&&e.target.files[0]; if(!f) return; prepararFoto(f).then(r=>{S.foto=r;const pv=$('#fotoPrev');if(pv){pv.querySelector('img')?.remove();const im=document.createElement('img');im.src=r.preview;im.alt='Tu foto de perfil';pv.appendChild(im)}toast('Foto lista. Se guardará al guardar tu perfil.')}).catch(er=>toast(er.message)); e.target.value=''}
   if(e.target.name==='rol'){document.querySelectorAll('.rol').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));if(S.auth)S.auth.rol=e.target.value}
   if(e.target.name==='serv'&&S.sheet){S.sheet.serv=e.target.value;document.querySelectorAll('.serv').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));const pp=$('#docPrice');if(pp)pp.textContent=money(servDe(docById(S.sheet.id),S.sheet.serv).p)}
   if(id==='pt-doc'&&S.sheet){S.sheet.docId=e.target.value;refreshSheetSlots()}
@@ -1482,7 +1532,9 @@ document.addEventListener('submit',async e=>{
   if(e.target.id==='authForm'){e.preventDefault();submitAuth();return}
   if(e.target.id==='donb-form'||e.target.id==='dForm'){e.preventDefault(); const nuevo=e.target.id==='donb-form'; const d=leerDocForm(nuevo); if(!d) return;
     const btn=e.target.querySelector('button[type=submit]'); btn.disabled=true; btn.textContent='Guardando…';
-    try{ if(nuevo){await ST.saveDoctor({...d,id:slugDoc(d.nombre),terminosAceptados:new Date().toISOString(),color:['#0B7D91','#2E6DA4','#6B5B95','#2A6F7A','#5B7A3A','#9C4D7A'][Math.floor(Math.random()*6)]},true); window.scrollTo(0,0); toast('¡Perfil creado! Ahora registra tu tarjeta.')}
+    try{ if(S.foto&&S.foto.blob){try{d.fotoUrl=await ST.subirFoto(S.foto.blob)}catch(er){toast('No se pudo subir la foto. Se guardó lo demás.')}} else if(S.foto&&S.foto.quitar){d.fotoUrl=null;ST.borrarFoto()}
+         S.foto=null;
+         if(nuevo){await ST.saveDoctor({...d,id:slugDoc(d.nombre),terminosAceptados:new Date().toISOString(),color:['#0B7D91','#2E6DA4','#6B5B95','#2A6F7A','#5B7A3A','#9C4D7A'][Math.floor(Math.random()*6)]},true); window.scrollTo(0,0); toast('¡Perfil creado! Ahora registra tu tarjeta.')}
          else {await ST.saveDoctor({...d,id:S.miDoc.id},false); toast('Cambios guardados.')} }
     catch(err){const m=$('#d-err'); m.textContent=err&&err.code==='23505'?'Ya existe un perfil de médico con esta cuenta.':'No se pudo guardar. Revisa tus datos e inténtalo de nuevo.'; m.hidden=false}
     finally{btn.disabled=false; btn.textContent=nuevo?'Crear mi perfil de médico':'Guardar cambios'} return}
