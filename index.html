@@ -392,33 +392,132 @@ svg.chev{width:18px;height:18px;flex:none;color:var(--muted)}
   .redes-ed{grid-template-columns:repeat(3,minmax(0,1fr))}
   .toast{top:calc(76px + env(safe-area-inset-top,0px))}
 }
-/* ===== Computadora (1100 px o más): menú lateral, tres columnas, perfiles como panel a la derecha ===== */
+/* ===== Piezas que solo se muestran en pantallas grandes (ocultas en celular) ===== */
+.solo-pc,.hero-side,.hero-sub,.doc-cal,.pie{display:none}
+.desc-layout,.filtros-lado,.pf,.pf-a,.pf-b,.pf-side,.perfil-grid{display:flex;flex-direction:column;min-width:0}
+.desc-layout,.filtros-lado,.perfil-grid{gap:18px}
+.pf,.pf-a,.pf-b{gap:16px}
+@media (min-width:768px){
+  .hero-sub{display:block;max-width:52ch}
+  .perfil-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+}
+/* ===== Computadora (1100 px o más): menú arriba, filtros a la izquierda, perfil del médico en dos columnas ===== */
 @media (min-width:1100px){
+  body{font-size:15.5px}
   .app{max-width:none}
-  .top{padding-left:24px;padding-right:32px}
+  .top{padding:0 32px}
+  .top-row{max-width:1280px;margin:0 auto;height:68px;gap:20px}
   .brand .wordmark{font-size:1rem!important}
-  .nav{top:calc(57px + env(safe-area-inset-top,0px));bottom:0;left:0;right:auto;width:240px;border-top:0;border-right:1px solid var(--line);padding:18px 12px;overflow-y:auto}
-  .nav-in{display:flex;flex-direction:column;gap:4px;max-width:none;margin:0}
-  .nav button{flex-direction:row;justify-content:flex-start;gap:12px;font-size:.95rem;font-weight:500;padding:9px 12px;border-radius:12px;color:var(--ink)}
-  .nav button:hover{background:var(--surface-2)}
-  .nav button[aria-current="page"]{background:var(--brand-soft);color:var(--brand-ink);font-weight:600}
+  .nav{position:static;flex:1;align-self:stretch;background:none;border:0;padding:0}
+  .nav-in{display:flex;justify-content:center;gap:2px;max-width:none;margin:0;height:100%}
+  .nav button{flex-direction:row;gap:8px;height:100%;padding:0 12px;border-radius:0;border-bottom:3px solid transparent;font-size:.92rem;font-weight:500;color:var(--ink)}
+  .nav button:hover{color:var(--brand)}
+  .nav button[aria-current="page"]{color:var(--brand-ink);border-bottom-color:var(--brand);font-weight:600}
+  .nav button svg{width:19px;height:19px}
   .nav-ic{width:auto;height:auto;background:none!important}
-  .nav .badge-dot{top:-6px;right:-8px}
-  main{margin-left:240px;padding-left:40px;padding-right:40px;padding-block:28px 48px;align-items:center}
-  main>*{width:100%;max-width:1160px}
-  body:has(#nav[hidden]) main{margin-left:0}
-  .hero{padding:36px 36px 30px}
-  .hero h1{font-size:2.3rem}
-  #results{grid-template-columns:repeat(auto-fill,minmax(340px,1fr))}
-  .art-grid,.pack-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
-  .lista-citas{grid-template-columns:repeat(auto-fill,minmax(360px,1fr))}
-  .eb-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:22px}
-  .quick-acts{max-width:none;grid-template-columns:repeat(3,minmax(0,280px))}
-  .trust{grid-template-columns:repeat(3,minmax(0,1fr));max-width:900px}
+  .nav .badge-dot{top:-8px;right:-10px}
+  .demo-pill{margin-left:0}
+  .nav[hidden]+.demo-pill{margin-left:auto}
+  main{padding:32px 32px 56px;align-items:center;gap:26px}
+  main>*{width:100%;max-width:1280px}
+  h1{font-size:2rem}
+  h2{font-size:1.35rem}
+  .toast{left:50%}
+
+  /* Portada */
+  .hero{padding:48px;border-radius:28px;gap:22px}
+  .hero h1{font-size:2.6rem;max-width:18ch}
+  .hero .search{max-width:640px}
+  .hero .search .input{min-height:58px;font-size:1.05rem;padding-left:48px;border-radius:14px}
+  .hero .search svg{left:17px;width:20px;height:20px}
+  .hero:has(.hero-side){display:grid;grid-template-columns:minmax(0,1fr) 340px;grid-template-areas:"t side" "s side";column-gap:56px;align-items:center}
+  .hero:has(.hero-side)>.stack{grid-area:t}
+  .hero:has(.hero-side)>.search{grid-area:s}
+  .hero-side{grid-area:side;display:flex;flex-direction:column;gap:18px;list-style:none;margin:0;padding:22px;position:relative;border-radius:20px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2)}
+  .hero-side li{display:flex;gap:14px;align-items:flex-start;color:rgba(242,252,254,.85);font-size:.88rem;line-height:1.35}
+  .hero-side svg{width:22px;height:22px;flex:none;color:#fff;margin-top:1px}
+  .hero-side span{display:flex;flex-direction:column;gap:2px}
+  .hero-side b{color:#fff;font-size:.98rem}
+  .quick-acts{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;max-width:none}
+  .quick-acts button{flex-direction:row;align-items:center;gap:14px;padding:18px 20px}
+  .quick-acts b{margin-top:0;font-size:.98rem}
+  .quick-acts button>span.li-ic{width:44px;height:44px}
+  .quick-acts button{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:14px}
+  .quick-acts button>.li-ic{grid-row:1/3}
+  .chips{flex-wrap:wrap;overflow:visible}
+
+  /* Directorio: filtros a la izquierda, tarjetas anchas con calendario */
+  .desc-layout{display:grid;grid-template-columns:290px minmax(0,1fr);gap:28px;align-items:start}
+  .filtros-lado{position:sticky;top:92px;gap:12px;padding:20px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-m);max-height:calc(100vh - 112px);overflow-y:auto}
+  .solo-pc{display:block}
+  .filtros-lado h3{font-size:.95rem}
+  .filtros-lado h3+.filters{margin-top:-2px}
+  .filtros-lado .chips{gap:6px}
+  .filtros-lado .chip{font-size:.84rem;padding:6px 11px}
+  .filtros-lado .filters{flex-wrap:wrap;overflow:visible}
+  .filtros-lado .filters select{flex:1 1 100%;width:100%;border-radius:12px}
+  #results{display:flex;flex-direction:column;gap:16px}
+  #results .doc{display:grid;grid-template-columns:minmax(0,1fr) 400px;column-gap:28px;padding:22px}
+  #results .doc-hit{grid-column:1;grid-row:1}
+  #results .doc .fav-btn{top:22px;right:calc(22px + 400px + 28px)}
+  #results .doc .doc-main{padding-right:46px;gap:4px}
+  #results .doc .avatar{width:88px;height:88px;border-radius:24px}
+  #results .doc-name{font-size:1.15rem}
+  #results .doc-foot{display:none}
+  #results .doc-cal{display:flex;grid-column:2;grid-row:1;flex-direction:column;gap:12px;align-items:center;border-left:1px solid var(--line);padding-left:28px}
+  .doc-cal-g{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;width:100%}
+  .doc-cal-d{display:flex;flex-direction:column;gap:6px;align-items:stretch;text-align:center}
+  .doc-cal-h{display:flex;flex-direction:column;line-height:1.2;padding-bottom:4px}
+  .doc-cal-h small{font-size:.75rem;color:var(--muted)}
+  .doc-cal .qslot{padding:8px 2px;font-size:.9rem}
+
+  /* Otras páginas */
+  #svres{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .art-grid,.pack-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+  .lista-citas{grid-template-columns:repeat(auto-fill,minmax(380px,1fr))}
+  .eb-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:24px}
+  .planes{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+  .plan{padding:24px}
+  .perfil-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+  .trust{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+  .trust div{padding:16px;font-size:.86rem}
+  .upsell{padding:20px 24px}
+
+  /* Paneles: a la derecha; el perfil del médico, ventana grande en dos columnas */
   .sheet-wrap{justify-content:flex-end;align-items:stretch;padding:0}
   .sheet{width:600px;max-width:600px;height:100%;max-height:none;border-radius:22px 0 0 22px;animation:lado .24s ease-out}
   @keyframes lado{from{transform:translateX(48px);opacity:.6}to{transform:none;opacity:1}}
-  .toast{left:calc(50% + 120px)}
+  .sheet-wrap:has(.doc-sheet){justify-content:center;align-items:center;padding:32px}
+  .sheet.doc-sheet{width:min(1140px,100%);max-width:none;height:calc(100vh - 64px);border-radius:24px;animation:up .22s ease-out}
+  .doc-sheet .sheet-head,.doc-sheet .sheet-foot{padding-left:36px;padding-right:36px}
+  .doc-sheet .sheet-body{padding:28px 36px}
+  .pf{display:grid;grid-template-columns:minmax(0,1fr) 420px;grid-template-areas:"a side" "b side";gap:24px 40px;align-items:start}
+  .pf-a{grid-area:a}
+  .pf-b{grid-area:b}
+  .pf-side{grid-area:side;position:sticky;top:0}
+  .pf-side #agenda{padding:20px}
+  .doc-sheet .slots{grid-template-columns:repeat(4,minmax(0,1fr))}
+
+  /* Pie de página */
+  .pie{display:block;margin-top:24px;padding:44px 32px 24px;background:var(--surface);border-top:1px solid var(--line)}
+  .pie:empty,body:has(#nav[hidden]) .pie{display:none}
+  .pie-in{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:1.6fr repeat(4,minmax(0,1fr));gap:32px}
+  .pie-marca{display:flex;flex-direction:column;gap:12px;max-width:320px}
+  .pie-col{display:flex;flex-direction:column;gap:9px;align-items:flex-start}
+  .pie-col b{font-size:.92rem;margin-bottom:2px}
+  .pie-col button{background:none;border:0;padding:0;color:var(--muted);font-size:.9rem;text-align:left}
+  .pie-col button:hover{color:var(--brand)}
+  .pie-legal{max-width:1280px;margin:28px auto 0;padding-top:16px;border-top:1px solid var(--line)}
+}
+@media (min-width:1100px) and (max-width:1279px){
+  .nav button{padding:0 9px;font-size:.88rem}
+  .nav button svg{display:none}
+  .desc-layout{grid-template-columns:250px minmax(0,1fr);gap:22px}
+  #results .doc{grid-template-columns:minmax(0,1fr) 300px;column-gap:20px}
+  #results .doc .fav-btn{right:calc(22px + 300px + 20px)}
+  #results .doc-cal{padding-left:20px}
+  #results .doc .avatar{width:72px;height:72px}
+  .pf{grid-template-columns:minmax(0,1fr) 380px}
 }
 @media (min-width:1100px) and (prefers-reduced-motion:reduce){.sheet{animation:none}}
 @media (hover:hover){.doc:hover,.eb-card:hover .cover,.art:hover{transform:translateY(-2px)}.doc,.cover,.art{transition:transform .15s ease}}
@@ -431,6 +530,7 @@ svg.chev{width:18px;height:18px;flex:none;color:var(--muted)}
         <span class="logo-iso" style="width:36px;height:32px"></span>
         <span class="wordmark" style="font-size:.95rem">Health Digital</span>
       </div>
+      <nav class="nav" id="nav" hidden aria-label="Secciones"><div class="nav-in" id="navIn"></div></nav>
       <span class="demo-pill" id="modePill">Demo</span>
       <button class="btn btn-primary btn-sm" id="cuentaBtn" data-act="entrar" hidden>Entrar</button>
     </div>
@@ -441,8 +541,8 @@ svg.chev{width:18px;height:18px;flex:none;color:var(--muted)}
       <p class="muted">Abriendo tu espacio seguro…</p>
     </div></div>
   </main>
+  <footer class="pie" id="pie"></footer>
 </div>
-<nav class="nav" id="nav" hidden aria-label="Secciones"><div class="nav-in" id="navIn"></div></nav>
 <div id="sheetRoot"></div>
 <div id="toastRoot"></div>
 
@@ -909,7 +1009,7 @@ function start(store){
 /* ============ Render principal ============ */
 function render(soft){
   if(!S.ready) return;
-  const v=$('#view'); renderCuentaBtn();
+  const v=$('#view'); renderCuentaBtn(); renderPie();
   if(S.rol==='medico'){
     if(!S.miDoc){$('#nav').hidden=true; if(!soft||!v.querySelector('#donb')) v.innerHTML=viewDocOnboarding(); return}
     $('#nav').hidden=false; renderNav();
@@ -928,6 +1028,17 @@ function render(soft){
   if(S.tab==='membresia') drawQR();
   if(soft) window.scrollTo(0,keepScroll);
 }
+function renderPie(){const f=$('#pie'); if(!f) return;
+  if(S.rol==='medico'){f.innerHTML='';return}
+  const sb=S.store&&S.store.modo==='supabase';
+  f.innerHTML=`<div class="pie-in">
+    <div class="pie-marca"><div class="brand"><span class="logo-iso" style="width:36px;height:32px"></span><span class="wordmark">Health Digital</span></div>
+      <p class="small muted">Encuentra médicos con cédula verificada, agenda en minutos y cuida tu salud con contenido hecho por profesionales.</p></div>
+    <div class="pie-col"><b>Pacientes</b><button data-act="tab" data-v="descubrir">Buscar médico</button><button data-act="soloVideo">Videoconsulta</button><button data-act="tab" data-v="citas">Mis citas</button><button data-act="tab" data-v="membresia">Membresía</button></div>
+    <div class="pie-col"><b>Salud</b><button data-act="tab" data-v="salud">Artículos gratis</button><button data-act="tab" data-v="salud">E-books y programas</button><button data-act="tab" data-v="servicios">Laboratorios y estudios</button></div>
+    <div class="pie-col"><b>Médicos</b>${sb?'<button data-act="crearCuenta" data-v="medico">Registrarme como médico</button>':'<button data-act="portal">Portal médico</button>'}<span class="small muted">Sin mensualidad · 10% por consulta atendida</span></div>
+    <div class="pie-col"><b>Health Digital</b><button data-act="aviso">Aviso de privacidad</button><span class="small muted">Tus datos viajan cifrados</span></div>
+  </div><div class="pie-legal small muted">© ${new Date().getFullYear()} Health Digital · La información de la plataforma no sustituye la consulta médica.</div>`}
 function renderCuentaBtn(){const b=$('#cuentaBtn'); if(!b) return; const inv=S.store&&S.rol!=='medico'&&esInvitado()&&!S.pantalla; b.hidden=!inv}
 function renderNav(){
   if(S.rol==='medico'){const pc=docPorConfirmar().length;
@@ -1043,8 +1154,15 @@ function docCard(d){
     </div>
     <div class="row wrap" style="gap:6px">${!d.db&&S.store&&S.store.modo==='supabase'?'<span class="tag warn">Perfil de ejemplo</span>':''}${d.modos.includes('Videoconsulta')?`<span class="tag blue">${I.video} Videoconsulta</span>`:''}${d.seguros.slice(0,3).map(s=>`<span class="tag">${esc(s)}</span>`).join('')}</div>
     </button>
+    ${docCalHTML(d)}
     <div class="doc-foot">${libres.length?`<span class="small muted">Próximos horarios</span><div class="quick">${libres.map(x=>`<button class="qslot num" data-act="rapido" data-v="${d.id}|${x.fecha}|${x.hora}"><small>${esc(relDia(x.fecha))}</small>${x.hora}</button>`).join('')}<button class="qslot more" data-act="doctor" data-v="${d.id}">Más<small>horarios</small></button></div>`:'<span class="small muted">Sin horarios en las próximas 2 semanas</span>'}</div>
   </article>`;
+}
+function docCalHTML(d){
+  const dias=proximosDias(14).map(f=>({f,h:libresDe(d,f)})).filter(x=>x.h.length).slice(0,3);
+  if(!dias.length) return `<div class="doc-cal"><p class="small muted">Sin horarios en las próximas 2 semanas</p><button class="btn btn-soft btn-sm" data-act="doctor" data-v="${d.id}">Ver perfil</button></div>`;
+  return `<div class="doc-cal" aria-label="Horarios disponibles"><div class="doc-cal-g">${dias.map(x=>{const dt=parseYmd(x.f);return `<div class="doc-cal-d"><span class="doc-cal-h"><b>${x.f===hoy()?'Hoy':relDia(x.f)==='Mañana'?'Mañana':cap(DIAS[dt.getDay()])}</b><small class="num">${dt.getDate()} ${MESES[dt.getMonth()]}</small></span>${x.h.slice(0,4).map(h=>`<button class="qslot num" data-act="rapido" data-v="${d.id}|${x.f}|${h}">${h}</button>`).join('')}${x.h.length>4?`<span class="small muted num">+${x.h.length-4} más</span>`:''}</div>`}).join('')}</div>
+    <button class="link small" data-act="doctor" data-v="${d.id}">Ver todos los horarios</button></div>`;
 }
 function resultsHTML(){
   const r=filtrarDoctores();
@@ -1054,8 +1172,9 @@ function resultsHTML(){
 function viewDescubrir(){
   const n=esInvitado()?'':(S.perfil.nombre||'').split(' ')[0];
   const prox=citasProximas()[0];
-  return `<section class="hero"><span class="logo-wm" aria-hidden="true"></span><div class="stack" style="gap:4px;position:relative"><p>Hola${n?', '+esc(n):''}</p><h1>¿Con quién quieres consultarte?</h1></div>
-    <div class="search" style="position:relative">${I.search}<input class="input" id="q" type="search" placeholder="Especialidad, nombre o colonia" value="${esc(S.f.q)}" aria-label="Buscar profesional"></div></section>
+  return `<section class="hero"><span class="logo-wm" aria-hidden="true"></span><div class="stack" style="gap:4px;position:relative"><p>Hola${n?', '+esc(n):''}</p><h1>¿Con quién quieres consultarte?</h1><p class="hero-sub">Encuentra a tu especialista, compara precios y opiniones, y agenda en minutos.</p></div>
+    <div class="search" style="position:relative">${I.search}<input class="input" id="q" type="search" placeholder="Especialidad, nombre o colonia" value="${esc(S.f.q)}" aria-label="Buscar profesional"></div>
+    <ul class="hero-side" aria-label="Por qué Health Digital"><li>${I.verified}<span><b>Cédula verificada</b>Revisamos cada cédula ante la SEP</span></li><li>${I.cal}<span><b>Agenda en 1 minuto</b>Horarios reales, sin llamadas</span></li><li>${I.lock}<span><b>Datos protegidos</b>Tu expediente solo lo ves tú</span></li></ul></section>
   ${prox?`<button class="card row" data-act="tab" data-v="citas" style="text-align:left;background:var(--brand-soft);border-color:transparent">
       <div class="li-ic" style="background:var(--surface)">${I.cal}</div>
       <div class="grow" style="min-width:0;flex:1"><b>Tu próxima cita: ${relDia(prox.fecha)}, ${prox.hora}</b><p class="small muted">${esc(docById(prox.doctorId)?.nombre)} · ${esc(prox.modalidad)}</p></div>${I.chev}</button>`:''}
@@ -1064,7 +1183,9 @@ function viewDescubrir(){
     <button data-act="tab" data-v="salud"><span class="li-ic">${I.leaf}</span><b>Salud</b><small>Artículos y e-books</small></button>
     <button data-act="tab" data-v="membresia"><span class="li-ic">${I.card}</span><b>${S.perfil.plan?'Mi credencial':'Membresía'}</b><small>${S.perfil.plan?'Lista para usar':'Desde $300/mes'}</small></button>
   </div>
+  <div class="desc-layout"><aside class="filtros-lado" aria-label="Filtros"><h3 class="solo-pc">Especialidad</h3>
   <div class="chips" role="group" aria-label="Especialidad">${especialidades().map(e=>`<button class="chip" data-act="esp" data-v="${esc(e)}" aria-pressed="${S.f.esp===e}">${esc(e)}</button>`).join('')}</div>
+  <h3 class="solo-pc">Disponibilidad y filtros</h3>
   <div class="filters">
     <button class="fpill" data-act="disp" data-v="hoy" aria-pressed="${S.f.disp==='hoy'}">Hoy</button>
     <button class="fpill" data-act="disp" data-v="semana" aria-pressed="${S.f.disp==='semana'}">Esta semana</button>
@@ -1074,7 +1195,8 @@ function viewDescubrir(){
     <select class="input ${S.f.modo?'on':''}" id="f-modo" aria-label="Modalidad"><option value="">Presencial o en línea</option><option value="Videoconsulta" ${S.f.modo==='Videoconsulta'?'selected':''}>Videoconsulta</option><option value="Presencial" ${S.f.modo==='Presencial'?'selected':''}>Consultorio</option></select>
     <select class="input" id="f-orden" aria-label="Ordenar"><option value="recomendados">Ordenar: disponibles antes</option><option value="distancia" ${S.f.orden==='distancia'?'selected':''}>Más cerca</option><option value="precio" ${S.f.orden==='precio'?'selected':''}>Menor precio</option><option value="calificacion" ${S.f.orden==='calificacion'?'selected':''}>Mejor calificados</option></select>
   </div>
-  <div class="stack" id="results">${resultsHTML()}</div>
+  </aside>
+  <div class="stack" id="results">${resultsHTML()}</div></div>
   ${S.perfil.plan?'':`<button class="upsell" data-act="tab" data-v="membresia"><span class="logo-iso" style="width:40px;height:36px"></span><span style="flex:1;min-width:0"><b>Consultas incluidas desde $300 al mes</b><span class="small muted" style="display:block">Agenda preferente, credencial digital y 15% en estudios.</span></span>${I.chev}</button>`}
   <div class="trust">${trustHTML()}</div>`;
 }
@@ -1213,7 +1335,7 @@ function viewPerfil(){
     <div class="card elev list"><button data-act="aviso"><span class="li-ic">${I.shield}</span><span class="grow"><b>Privacidad y seguridad</b><span class="small muted" style="display:block">Aviso de privacidad y cómo protegemos tus datos</span></span>${I.chev}</button></div>`}
   const P=S.perfil; const ini=(P.nombre||'?').split(' ').map(x=>x[0]).slice(0,2).join('');
   return `<section class="row" style="gap:14px"><div class="avatar lg" style="background:var(--brand);color:var(--on-brand)">${esc(ini)}</div><div style="min-width:0"><h1>${esc(P.nombre)}</h1><p class="muted small">${esc(P.email||P.telefono||'Completa tus datos de contacto')}</p>${P.plan?`<span class="tag ok" style="margin-top:4px">${esc(PLANES[P.plan].nombre)}</span>`:''}</div></section>
-  <div class="card elev list">
+  <div class="perfil-grid"><div class="card elev list">
     <button data-act="editarPerfil"><span class="li-ic">${I.user}</span><span class="grow"><b>Mis datos</b><span class="small muted" style="display:block">Nombre, teléfono y correo</span></span>${I.chev}</button>
     <button data-act="seguros"><span class="li-ic">${I.umbrella}</span><span class="grow"><b>Mis seguros</b><span class="small muted" style="display:block">${P.seguros&&P.seguros.length?esc(P.seguros.join(', ')):'Agrega tu aseguradora'}</span></span>${I.chev}</button>
     <button data-act="notif"><span class="li-ic">${I.bell}</span><span class="grow"><b>Notificaciones</b><span class="small muted" style="display:block">Recordatorios de citas</span></span>${I.chev}</button>
@@ -1225,7 +1347,7 @@ function viewPerfil(){
   </div>
   <div class="card elev list">
     <button data-act="portal"><span class="li-ic" style="background:var(--blue-soft);color:var(--blue)">${I.steth}</span><span class="grow"><b>Portal médico</b><span class="small muted" style="display:block">¿Eres profesional de la salud? Gestiona tu agenda</span></span>${I.chev}</button>
-  </div>
+  </div></div>
   ${S.store.modo==='supabase'?`<button class="btn btn-ghost btn-block" data-act="logout">Cerrar sesión</button>`:''}
   <p class="small muted">${S.store.modo==='supabase'?'Tu cuenta está protegida con contraseña y tus datos viajan cifrados. Nadie más puede ver tu perfil ni tus citas.':S.store.modo==='nube'?'Tus datos se sincronizan de forma privada con tu cuenta: nadie más puede ver tu perfil ni tus citas.':'Tus datos se guardan solo en este dispositivo.'}</p>`;
 }
@@ -1655,8 +1777,8 @@ function sheetTerminosMed(){
 /* ============ Hojas (detalle / reserva / formularios) ============ */
 function openSheet(s){S.sheet=s;renderSheet();document.body.style.overflow='hidden'}
 function closeSheet(){S.sheet=null;S._sig=null;$('#sheetRoot').innerHTML='';document.body.style.overflow=''}
-function sheetFrame(title,body,foot,back){
-  return `<div class="sheet-wrap" data-act="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+function sheetFrame(title,body,foot,back,cls){
+  return `<div class="sheet-wrap" data-act="scrim"><div class="sheet ${cls||''}" role="dialog" aria-modal="true" aria-label="${esc(title)}">
     <div class="sheet-head">${back?`<button class="icon-btn" data-act="${back}" aria-label="Atrás">${I.back}</button>`:''}<h2>${esc(title)}</h2><button class="icon-btn" data-act="close" aria-label="Cerrar">${I.x}</button></div>
     <div class="sheet-body" id="sheetBody">${body}</div>${foot?`<div class="sheet-foot">${foot}</div>`:''}</div></div>`;
 }
@@ -1710,7 +1832,7 @@ function sheetDoctor(s){
   }
   const dias=proximosDias(14);
   const res=S.resenas.filter(r=>r.doctorId===d.id).sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
-  return sheetFrame(s.reprogramar?'Elige un nuevo horario':'Perfil del profesional',`
+  return sheetFrame(s.reprogramar?'Elige un nuevo horario':'Perfil del profesional',`<div class="pf"><div class="pf-a">
     <section class="row" style="gap:14px;align-items:flex-start">${avatar(d,'lg')}<div class="stack" style="gap:4px;min-width:0">
       <div class="row" style="gap:8px;align-items:flex-start"><h2 style="flex:1">${esc(d.nombre)}</h2><button class="fav-btn static" data-act="fav" data-v="${d.id}" aria-pressed="${(S.perfil.favoritos||[]).includes(d.id)}" aria-label="Guardar en favoritos">${heart((S.perfil.favoritos||[]).includes(d.id))}</button></div><p class="muted">${esc(d.esp)}</p>
       <div class="row wrap" style="gap:6px"><span class="tag blue">${I.verified} Cédula verificada</span>${c?`<span class="tag"><span class="stars">★ ${c.prom.toFixed(1)}</span>&nbsp;${c.n} ${c.n===1?'opinión':'opiniones'}</span>`:'<span class="tag">Sin opiniones aún</span>'}</div>
@@ -1727,15 +1849,15 @@ function sheetDoctor(s){
     </section>
     <div class="row" style="align-items:flex-start;gap:8px">${I.pin.replace('<svg','<svg style="width:18px;height:18px;flex:none;margin-top:2px;color:var(--brand)"')}<span class="small">${d.hospital?`<b>${esc(d.hospital)}</b><br>`:''}${d.consultorio?`${esc(d.consultorio)}<br>`:''}${esc(d.dir)}${d.km?` · ${d.km} km`:''}</span></div>
     ${d.seguros.length?`<div class="row wrap" style="gap:6px"><span class="small muted">Acepta:</span>${d.seguros.map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div>`:'<p class="small muted">No trabaja con aseguradoras.</p>'}
-    <section class="stack" id="agenda"><h3>Agenda tu cita</h3>
+    </div><aside class="pf-side"><section class="stack card elev" id="agenda"><h3>Agenda tu cita</h3>
       ${d.modos.length>1?`<div class="seg">${d.modos.map(m=>`<button data-act="modo" data-v="${m}" aria-pressed="${s.modo===m}">${m==='Videoconsulta'?'Videoconsulta':'En consultorio'}</button>`).join('')}</div>`:`<span class="small muted">Solo ${d.modos[0]==='Presencial'?'en consultorio':'videoconsulta'}</span>`}
       <div class="days" role="group" aria-label="Fecha">${dias.map(f=>{const dt=parseYmd(f);const n=libresDe(d,f).length;return `<button class="day" data-act="fecha" data-v="${f}" aria-pressed="${s.fecha===f}" ${horasDe(d,f).length?'':'disabled'}><span>${f===hoy()?'hoy':DIAS[dt.getDay()]}</span><b class="num">${dt.getDate()}</b><small>${horasDe(d,f).length?(n?n+' lib.':'lleno'):'—'}</small></button>`}).join('')}</div>
       <div id="slotBox">${slotsHTML(d,s)}</div>
-    </section>
-    <section class="stack" style="gap:0"><div class="section-head"><h3>Opiniones de pacientes</h3><span class="small muted">Solo con cita atendida</span></div>
+    </section></aside>
+    <div class="pf-b"><section class="stack" style="gap:0"><div class="section-head"><h3>Opiniones de pacientes</h3><span class="small muted">Solo con cita atendida</span></div>
       ${res.length?`<div class="rev-sum"><div class="rev-big"><b class="num">${c.prom.toFixed(1)}</b>${estrellas(Math.round(c.prom))}<span class="small muted">${c.n} ${c.n===1?'opinión':'opiniones'}</span></div><div class="rev-bars">${califCats(d.id).map(x=>`<div class="rev-bar"><span class="small">${x.l}</span><span class="bar"><i style="width:${x.prom?x.prom/5*100:0}%"></i></span><span class="small num">${x.prom?x.prom.toFixed(1):'—'}</span></div>`).join('')}</div></div>`+res.slice(0,8).map(r=>`<div class="review"><div class="row between">${estrellas(r.estrellas)}<span class="small muted">${esc(r.fecha?fmtCorta(r.fecha):'')}</span></div>${CATS.some(([k])=>r[k])?`<span class="small muted">${CATS.filter(([k])=>r[k]).map(([k,l])=>`${l} ${r[k]}/5`).join(' · ')}</span>`:''}${r.texto?`<p class="small">${esc(r.texto)}</p>`:''}<span class="small muted">${I.verified.replace('<svg','<svg style="width:13px;height:13px;color:var(--blue);vertical-align:-2px"')} Paciente verificado</span>${r.respuesta?`<div class="reply"><b class="small">Respuesta de ${esc(d.nombre)}</b><p class="small">${esc(r.respuesta)}</p></div>`:''}</div>`).join(''):`<p class="small muted" style="padding-top:8px">Todavía no hay opiniones. Las opiniones solo se publican después de una consulta atendida.</p>`}
-    </section>`,
-    s.vista?`<p class="small muted grow">Así ven tu perfil los pacientes.</p><button class="btn btn-primary" data-act="close">Cerrar</button>`:`<div class="grow"><span class="small muted">${s.hora?esc(relDia(s.fecha))+' · '+esc(s.hora):'Elige un horario'}</span><div class="price num" id="docPrice">${money(servDe(d,s.serv).p)}</div></div><button class="btn btn-primary" id="ctaDoc" data-act="continuar" ${s.hora?'':'disabled'}>Continuar</button>`);
+    </section></div></div>`,
+    s.vista?`<p class="small muted grow">Así ven tu perfil los pacientes.</p><button class="btn btn-primary" data-act="close">Cerrar</button>`:`<div class="grow"><span class="small muted">${s.hora?esc(relDia(s.fecha))+' · '+esc(s.hora):'Elige un horario'}</span><div class="price num" id="docPrice">${money(servDe(d,s.serv).p)}</div></div><button class="btn btn-primary" id="ctaDoc" data-act="continuar" ${s.hora?'':'disabled'}>Continuar</button>`,null,'doc-sheet');
 }
 function sheetPlan(s){
   const p=PLANES[s.plan];
