@@ -474,3 +474,13 @@ create policy "fotos medicos: borrar la propia" on storage.objects for delete to
   using (bucket_id = 'fotos-medicos' and (storage.foldername(name))[1] = auth.uid()::text);
 create policy "fotos medicos: ver la propia" on storage.objects for select to authenticated
   using (bucket_id = 'fotos-medicos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ---------- Actualización 6: hospital y consultorio ----------
+alter table public.doctores add column if not exists hospital text
+  check (hospital is null or char_length(hospital) between 2 and 120);
+alter table public.doctores add column if not exists consultorio text
+  check (consultorio is null or char_length(consultorio) between 1 and 120);
+
+grant select (hospital, consultorio) on public.doctores to anon, authenticated;
+grant insert (hospital, consultorio) on public.doctores to authenticated;
+grant update (hospital, consultorio) on public.doctores to authenticated;

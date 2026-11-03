@@ -115,6 +115,7 @@ En Supabase → **SQL Editor → New query**, corre estos dos archivos, uno por 
 1. `actualizacion-3-pagos.sql`
 2. `actualizacion-4-medicos.sql`
 3. `actualizacion-5-fotos.sql`: foto de perfil, página web y redes de los médicos
+4. `actualizacion-6-hospital.sql`: hospital y consultorio de los médicos
 
 Desde ese momento:
 - solo un pago real de Stripe puede activar un plan;
