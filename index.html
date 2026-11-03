@@ -1,12 +1,5 @@
-<!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0B7D91">
-<meta name="description" content="Health Digital: encuentra médicos, agenda citas, administra tu membresía y aprende a cuidar tu salud.">
-<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Health Digital</title>
+<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -76,7 +69,7 @@ main{flex:1;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:m
 
 .nav{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--surface);border-top:1px solid var(--line);
   padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
-.nav-in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
+.nav-in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(var(--cols,6),1fr)}
 .nav button{background:none;border:0;padding:9px 2px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.72rem;font-weight:500;color:var(--muted)}
 .nav button svg{width:22px;height:22px}
 .nav button[aria-current="page"]{color:var(--brand)}
@@ -201,6 +194,8 @@ textarea.input{min-height:84px;resize:vertical}
 .candado-cta svg{width:22px;height:22px;color:var(--brand)}
 .candado{min-height:240px}
 svg.chev{width:18px;height:18px;flex:none;color:var(--muted)}
+
+
 .rol-pick{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .rol{position:relative;border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:4px;cursor:pointer;background:var(--surface)}
 .rol input{position:absolute;opacity:0;pointer-events:none}
@@ -372,9 +367,63 @@ svg.chev{width:18px;height:18px;flex:none;color:var(--muted)}
 .note svg{width:18px;height:18px;color:var(--blue);flex:none;margin-top:2px}
 .section-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
 @media (max-width:380px){.slots{grid-template-columns:repeat(3,minmax(0,1fr))}.trust{grid-template-columns:1fr}}
+
+/* ===== Tablet (768 px o más): contenido más ancho, dos columnas, hojas como ventana centrada ===== */
+@media (min-width:768px){
+  .app{max-width:980px}
+  .top,main{padding-left:max(28px,env(safe-area-inset-left,0px));padding-right:max(28px,env(safe-area-inset-right,0px))}
+  main{gap:22px}
+  h1{font-size:1.8rem}
+  .hero{padding:28px 28px 24px}
+  .hero h1{font-size:2rem;max-width:20ch}
+  .hero .search{max-width:560px}
+  .nav-in{max-width:980px}
+  #results,#svres,.lista-citas,.planes,.art-grid,.pack-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+  #results>p,#results>.empty,.lista-citas>.empty{grid-column:1/-1}
+  .art-grid>*,.pack-grid>*{height:100%}
+  .eb-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:18px}
+  .quick-acts{grid-template-columns:repeat(3,minmax(0,1fr));max-width:720px}
+  .trust{gap:12px}
+  .angosto,#onb,#donb{width:100%;max-width:640px;margin-inline:auto}
+  .sheet-wrap{align-items:center;padding:24px}
+  .sheet{max-width:680px;border-radius:22px;max-height:calc(100vh - 48px)}
+  .slots{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .agenda-slots{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .redes-ed{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .toast{top:calc(76px + env(safe-area-inset-top,0px))}
+}
+/* ===== Computadora (1100 px o más): menú lateral, tres columnas, perfiles como panel a la derecha ===== */
+@media (min-width:1100px){
+  .app{max-width:none}
+  .top{padding-left:24px;padding-right:32px}
+  .brand .wordmark{font-size:1rem!important}
+  .nav{top:calc(57px + env(safe-area-inset-top,0px));bottom:0;left:0;right:auto;width:240px;border-top:0;border-right:1px solid var(--line);padding:18px 12px;overflow-y:auto}
+  .nav-in{display:flex;flex-direction:column;gap:4px;max-width:none;margin:0}
+  .nav button{flex-direction:row;justify-content:flex-start;gap:12px;font-size:.95rem;font-weight:500;padding:9px 12px;border-radius:12px;color:var(--ink)}
+  .nav button:hover{background:var(--surface-2)}
+  .nav button[aria-current="page"]{background:var(--brand-soft);color:var(--brand-ink);font-weight:600}
+  .nav-ic{width:auto;height:auto;background:none!important}
+  .nav .badge-dot{top:-6px;right:-8px}
+  main{margin-left:240px;padding-left:40px;padding-right:40px;padding-block:28px 48px;align-items:center}
+  main>*{width:100%;max-width:1160px}
+  body:has(#nav[hidden]) main{margin-left:0}
+  .hero{padding:36px 36px 30px}
+  .hero h1{font-size:2.3rem}
+  #results{grid-template-columns:repeat(auto-fill,minmax(340px,1fr))}
+  .art-grid,.pack-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .lista-citas{grid-template-columns:repeat(auto-fill,minmax(360px,1fr))}
+  .eb-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:22px}
+  .quick-acts{max-width:none;grid-template-columns:repeat(3,minmax(0,280px))}
+  .trust{grid-template-columns:repeat(3,minmax(0,1fr));max-width:900px}
+  .sheet-wrap{justify-content:flex-end;align-items:stretch;padding:0}
+  .sheet{width:600px;max-width:600px;height:100%;max-height:none;border-radius:22px 0 0 22px;animation:lado .24s ease-out}
+  @keyframes lado{from{transform:translateX(48px);opacity:.6}to{transform:none;opacity:1}}
+  .toast{left:calc(50% + 120px)}
+}
+@media (min-width:1100px) and (prefers-reduced-motion:reduce){.sheet{animation:none}}
+@media (hover:hover){.doc:hover,.eb-card:hover .cover,.art:hover{transform:translateY(-2px)}.doc,.cover,.art{transition:transform .15s ease}}
 </style>
-</head>
-<body>
+
 <div class="app">
   <header class="top">
     <div class="top-row">
@@ -882,9 +931,9 @@ function render(soft){
 function renderCuentaBtn(){const b=$('#cuentaBtn'); if(!b) return; const inv=S.store&&S.rol!=='medico'&&esInvitado()&&!S.pantalla; b.hidden=!inv}
 function renderNav(){
   if(S.rol==='medico'){const pc=docPorConfirmar().length;
-    $('#navIn').style.gridTemplateColumns='repeat(3,1fr)';
+    $('#navIn').style.setProperty('--cols','3');
     $('#navIn').innerHTML=[['agenda','Agenda',I.cal],['pagosmed','Pagos',I.card],['perfilmed','Mi perfil',I.steth]].map(([k,l,ic])=>`<button data-act="tab" data-v="${k}" ${S.tab===k?'aria-current="page"':''}><span class="nav-ic">${ic}${k==='agenda'&&pc?`<span class="badge-dot num">${pc}</span>`:''}</span>${l}</button>`).join('');return}
-  $('#navIn').style.gridTemplateColumns='repeat(6,1fr)';
+  $('#navIn').style.setProperty('--cols','6');
   const prox=citasProximas().length;
   const items=[['descubrir','Descubrir',I.discover],['salud','Salud',I.leaf],['servicios','Servicios',I.services],['citas','Citas',I.cal],['membresia','Membresía',I.card],['perfil','Perfil',I.user]];
   $('#navIn').innerHTML=items.map(([k,l,ic])=>`<button data-act="tab" data-v="${k}" ${S.tab===k?'aria-current="page"':''}><span class="nav-ic">${ic}${k==='citas'&&prox?`<span class="badge-dot num">${prox}</span>`:''}</span>${l}</button>`).join('');
@@ -896,7 +945,7 @@ function viewAuth(){
   const a=S.auth||{modo:'entrar'};
   if(a.modo==='enviado') return `<section class="stack" style="gap:16px"><div class="hero-ok"><div class="ring">${I.check}</div><h1>Revisa tu correo</h1><p class="muted">${esc(a.msg)}</p></div><button class="btn btn-ghost btn-block" data-act="authModo" data-v="entrar">Volver a iniciar sesión</button></section>`;
   const t={entrar:['Inicia sesión','Entrar'],crear:['Crea tu cuenta','Crear cuenta'],olvide:['Recupera tu contraseña','Enviar enlace'],nueva:['Elige una nueva contraseña','Guardar contraseña']}[a.modo];
-  return `<section class="stack" style="gap:18px">
+  return `<section class="stack angosto" style="gap:18px">
     ${S.store&&S.store.invitado?`<button class="link small" data-act="seguirSinCuenta" style="align-self:flex-start">${I.back.replace('<svg','<svg style="width:16px;height:16px;vertical-align:-3px"')} Seguir explorando sin cuenta</button>`:''}
     ${a.motivo?`<div class="note">${I.info}<span>${esc(a.motivo)}</span></div>`:`<div class="auth-logo"><span class="logo-full" role="img" aria-label="Health Digital" style="width:200px"></span></div>`}
     <div class="stack" style="gap:8px"><span class="tag ok">${I.lock} Conexión cifrada</span><h1>${t[0]}</h1>
@@ -1083,7 +1132,7 @@ function viewCitas(){
   const list=S.citasTab==='proximas'?citasProximas():citasHistorial();
   return `<section class="stack" style="gap:6px"><h1>Mis citas</h1><p class="muted">Consulta, reprograma o cancela tus reservas.</p></section>
   <div class="seg" role="group"><button data-act="citastab" data-v="proximas" aria-pressed="${S.citasTab==='proximas'}">Próximas</button><button data-act="citastab" data-v="historial" aria-pressed="${S.citasTab==='historial'}">Historial</button></div>
-  <div class="stack">${list.length?list.map(citaCard).join(''):`<div class="card empty">${I.cal}<h3>${S.citasTab==='proximas'?'Aún no tienes citas próximas':'Tu historial está vacío'}</h3><p class="muted small">Reserva con un profesional para comenzar.</p><button class="btn btn-primary btn-sm" data-act="tab" data-v="descubrir">Buscar profesional</button></div>`}</div>
+  <div class="stack lista-citas">${list.length?list.map(citaCard).join(''):`<div class="card empty">${I.cal}<h3>${S.citasTab==='proximas'?'Aún no tienes citas próximas':'Tu historial está vacío'}</h3><p class="muted small">Reserva con un profesional para comenzar.</p><button class="btn btn-primary btn-sm" data-act="tab" data-v="descubrir">Buscar profesional</button></div>`}</div>
   <p class="small muted">Cancelación sin costo hasta 24 horas antes de tu cita.</p>`;
 }
 
@@ -1114,7 +1163,7 @@ function viewMembresia(){
   const head=`<section class="stack" style="gap:6px"><h1>Membresía</h1><p class="muted">Consultas incluidas cada mes para ti y tu familia.</p></section>`;
   const notaPago=conStripe()?`<div class="note">${I.lock}<span>Pagos seguros con <b>Stripe</b>. Health Digital nunca ve ni guarda los datos de tu tarjeta. Cancela cuando quieras.</span></div>`:`<div class="note">${I.info}<span>Modo demo: activar un plan no genera ningún cargo.</span></div>`;
   if(S.esperandoPago&&!plan&&Date.now()-S.esperandoPago<60000) return head+`<div class="card elev empty"><div class="ring" style="width:56px;height:56px;border-radius:50%;background:var(--brand-soft);display:grid;place-items:center;color:var(--brand)">${I.card}</div><h3>Activando tu membresía…</h3><p class="small muted">Recibimos tu pago. Tu credencial aparecerá aquí en unos segundos.</p></div>`;
-  if(!plan) return head+notaPago+planCard('individual')+planCard('familiar');
+  if(!plan) return head+notaPago+'<div class="planes">'+planCard('individual')+planCard('familiar')+'</div>';
   const uso=usoMes(), rest=Math.max(0,plan.cupo-uso);
   const miembros=[{nombre:P.nombre,parentesco:'Titular'},...(P.miembros||[])];
   return head+`
@@ -1141,7 +1190,7 @@ function viewMembresia(){
     ${miembros.length<plan.miembros?`<button class="btn btn-soft btn-sm" data-act="addMiembro">${I.family} Agregar miembro</button>`:''}
   </div>`:''}
   <h2>Planes disponibles</h2>
-  ${planCard('individual')}${planCard('familiar')}
+  <div class="planes">${planCard('individual')}${planCard('familiar')}</div>
   ${conStripe()?`<button class="btn btn-ghost btn-block" data-act="portalPago">${I.card} Pagos, recibos y cancelación</button>`:`<button class="btn btn-ghost btn-block" data-act="cancelarPlan">Cancelar membresía</button>`}
   ${notaPago}`;
 }
@@ -1349,12 +1398,12 @@ function viewSalud(){
   ${esMiembro()?`<div class="note" style="background:var(--brand-soft)">${I.card.replace('<svg','<svg style="color:var(--brand)"')}<span>Como miembro tienes <b>${DESC_MIEMBRO*100}% de descuento</b> en todos los e-books y programas.</span></div>`:`<button class="note" data-act="tab" data-v="membresia" style="border:0;text-align:left;width:100%">${I.info}<span>Con una membresía tienes <b>${DESC_MIEMBRO*100}% de descuento</b> en todos los e-books. <b style="color:var(--blue)">Ver planes</b></span></button>`}
   <section class="stack"><div class="section-head"><h2>E-books y programas</h2><span class="small muted">Vista previa gratis</span></div>
     ${ebooks.length?`<div class="eb-grid">${ebooks.map(ebookCard).join('')}</div>`:'<p class="small muted">No hay e-books con esos filtros.</p>'}</section>
-  ${packs?`<section class="stack"><h2>Paquetes</h2>${PACKS.map(pk=>{const items=pk.ids.map(ebookDe);const suma=items.reduce((a,e)=>a+e.precio,0);const todos=items.every(e=>tengo(e.id));
+  ${packs?`<section class="stack"><h2>Paquetes</h2><div class="pack-grid">${PACKS.map(pk=>{const items=pk.ids.map(ebookDe);const suma=items.reduce((a,e)=>a+e.precio,0);const todos=items.every(e=>tengo(e.id));
     return `<article class="card elev stack pack"><div class="row between" style="align-items:flex-start"><div style="min-width:0"><h3>${esc(pk.t)}</h3><p class="small muted">${items.map(e=>esc(e.t)).join(' · ')}</p></div><span class="tag ok">Ahorras ${money(suma-pk.precio)}</span></div>
       <div class="pack-covers">${items.map(e=>portada(e,'mini')).join('')}</div>
-      <div class="row between"><span><s class="small muted num">${money(suma)}</s> <b class="num price">${money(precioFinal(pk.precio))}</b></span>${todos?'<span class="tag ok">Ya los tienes</span>':`<button class="btn btn-primary btn-sm" data-act="comprar" data-v="${pk.ids.join(',')}|${pk.id}">Comprar paquete</button>`}</div></article>`}).join('')}</section>`:''}
-  ${arts.length?`<section class="stack"><div class="section-head"><h2>Artículos gratis</h2><span class="small muted">${arts.length} artículos</span></div>
-    ${arts.map(a=>{const c=catDe(a.cat);return `<button class="card elev art" data-act="articulo" data-v="${a.id}"><span class="art-bar" style="background:${c.c}"></span><span class="stack" style="gap:4px;min-width:0"><span class="small" style="color:${c.c};font-weight:600">${esc(c.n)} · ${a.min} min de lectura</span><b>${esc(a.t)}</b><span class="small muted">${esc(a.r)}</span></span>${I.chev}</button>`}).join('')}</section>`:''}
+      <div class="row between"><span><s class="small muted num">${money(suma)}</s> <b class="num price">${money(precioFinal(pk.precio))}</b></span>${todos?'<span class="tag ok">Ya los tienes</span>':`<button class="btn btn-primary btn-sm" data-act="comprar" data-v="${pk.ids.join(',')}|${pk.id}">Comprar paquete</button>`}</div></article>`}).join('')}</div></section>`:''}
+  ${arts.length?`<section class="stack"><div class="section-head"><h2>Artículos gratis</h2><span class="small muted">${arts.length} artículos</span></div><div class="art-grid">
+    ${arts.map(a=>{const c=catDe(a.cat);return `<button class="card elev art" data-act="articulo" data-v="${a.id}"><span class="art-bar" style="background:${c.c}"></span><span class="stack" style="gap:4px;min-width:0"><span class="small" style="color:${c.c};font-weight:600">${esc(c.n)} · ${a.min} min de lectura</span><b>${esc(a.t)}</b><span class="small muted">${esc(a.r)}</span></span>${I.chev}</button>`}).join('')}</div></section>`:''}
   <p class="small muted">La información de esta sección es general y no sustituye la consulta con un profesional de la salud.</p>`;
 }
 function sheetEbook(s){
@@ -1546,10 +1595,10 @@ function viewDocAgenda(){
   return `<section class="stack" style="gap:6px"><p class="muted">Hola</p><h1>${esc(d.nombre)}</h1></section>
   ${bannerDoc()}
   <div class="stats"><div class="card stat"><span class="small muted">Hoy</span><b class="num">${hoyN}</b></div><div class="card stat"><span class="small muted">Próximas</span><b class="num">${prox.length}</b></div><div class="card stat"><span class="small muted">Por marcar</span><b class="num">${conf.length}</b></div></div>
-  ${conf.length?`<section class="stack"><h2>Marca la asistencia</h2>${conf.map(c=>citaDocCard(c,'confirmar')).join('')}</section>`:''}
+  ${conf.length?`<section class="stack"><h2>Marca la asistencia</h2><div class="lista-citas stack">${conf.map(c=>citaDocCard(c,'confirmar')).join('')}</div></section>`:''}
   <section class="stack"><div class="section-head"><h2>Próximas citas</h2><button class="link small" data-act="docHorarios">Bloquear horarios</button></div>
-    ${prox.length?prox.map(c=>citaDocCard(c,'proxima')).join(''):`<div class="card empty">${I.cal}<h3>Aún no tienes citas próximas</h3><p class="small muted">${d.verificado&&d.tarjetaOk?'Cuando un paciente agende contigo, aparecerá aquí al instante.':'Completa los pasos de arriba para aparecer en el directorio.'}</p></div>`}</section>
-  ${hist.length?`<section class="stack"><h2>Historial</h2>${hist.map(c=>citaDocCard(c,'hist')).join('')}</section>`:''}
+    ${prox.length?`<div class="lista-citas stack">${prox.map(c=>citaDocCard(c,'proxima')).join('')}</div>`:`<div class="card empty">${I.cal}<h3>Aún no tienes citas próximas</h3><p class="small muted">${d.verificado&&d.tarjetaOk?'Cuando un paciente agende contigo, aparecerá aquí al instante.':'Completa los pasos de arriba para aparecer en el directorio.'}</p></div>`}</section>
+  ${hist.length?`<section class="stack"><h2>Historial</h2><div class="lista-citas stack">${hist.map(c=>citaDocCard(c,'hist')).join('')}</div></section>`:''}
   <button class="btn btn-ghost btn-block" data-act="docHorarios">${I.star} Ver y responder opiniones</button>`;
 }
 function rangoMes(off){const n=new Date();const a=new Date(n.getFullYear(),n.getMonth()+off,1),b=new Date(n.getFullYear(),n.getMonth()+off+1,0);return [ymd(a),ymd(b),MESES_L[a.getMonth()]+' '+a.getFullYear()]}
@@ -1959,6 +2008,3 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.sheet) closeSheet
 
 boot();
 </script>
-
-</body>
-</html>
