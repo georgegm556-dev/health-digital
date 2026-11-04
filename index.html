@@ -555,6 +555,9 @@ const CONFIG = {
   SUPABASE_URL: 'https://kzajozfetwfmbxojgnol.supabase.co',
   SUPABASE_ANON_KEY: 'sb_publishable_U8jH8zCpqCzjLJyTf07H5A_smi6ifkF',
   DEMO: true,
+  // Membresías: apagadas hasta tener convenio y tarifa con médicos (la base de datos manda en modo Supabase).
+  COBERTURA_MEMBRESIA: false,
+  VENTA_MEMBRESIAS: false,
   MEDICOS_EJEMPLO: true   // false para ocultar los 8 médicos de ejemplo cuando ya haya médicos reales
 };
 
@@ -729,7 +732,14 @@ function horasDe(doc,fecha){
   if(fecha===hoy()){const now=new Date();const lim=now.getHours()*60+now.getMinutes()+60;return doc.horas.filter(h=>minutos(h)>lim)}
   return doc.horas;
 }
-function libre(doc,fecha,hora){return !S.ocupados.has(slotKey(doc.id,fecha,hora))}
+function libre(doc,fecha,hora){
+  if(S.ocupados.has(slotKey(doc.id,fecha,hora))) return false;
+  const iv=S.intervalos&&S.intervalos.get(doc.id); if(!iv) return true;
+  const t=instante(fecha,hora); return !iv.some(([a,b])=>t>=a&&t<b);
+}
+function fijaOcupados(list){S.ocupados=new Map(list.map(o=>[o.id,o])); const m=new Map();
+  for(const o of list){if(!o.inicio||!o.fin) continue; const a=Date.parse(o.inicio), b=Date.parse(o.fin); if(!(b>a)) continue; if(!m.has(o.doctorId)) m.set(o.doctorId,[]); m.get(o.doctorId).push([a,b])}
+  S.intervalos=m}
 function libresDe(doc,fecha){return horasDe(doc,fecha).filter(h=>libre(doc,fecha,h))}
 function proxima(doc){for(const f of proximosDias(14)){const l=libresDe(doc,f);if(l.length) return {fecha:f,hora:l[0]}}return null}
 const CATS=[['puntualidad','Puntualidad'],['trato','Trato'],['instalaciones','Instalaciones']];
@@ -845,14 +855,16 @@ function SupabaseStore(sb,user){
   const fetchers={
     perfil:async()=>{const d=chk(await sb.from('perfiles').select('*').eq('id',me).maybeSingle());if(!d) return null;const p=toCamel(d);delete p.id;return p},
     citas:async()=>chk(await sb.from('citas').select('*').eq('user_id',me)).map(toCamel),
-    ocupados:async()=>chk(await sb.from('ocupados').select('id,doctor_id,fecha,hora,modalidad,tipo').gte('fecha',hoy())).map(toCamel),
-    resenas:async()=>chk(await sb.from('resenas').select('*')).map(r=>{const x=toCamel(r);delete x.userId;return x}),
+    ocupados:async()=>(await leerOcupados(sb)).map(toCamel),
+    resenas:async()=>{const pub=await leerResenas(sb);const {data}=await sb.rpc('mis_resenas');const mias=new Map((data||[]).map(r=>[r.id,r.cita_id]));return pub.map(r=>{const x=toCamel(r);if(mias.has(x.id))x.citaId=mias.get(x.id);return x})},
     doctores:async()=>{const {data,error}=await sb.from('doctores').select('id,nombre,especialidad,cedula,universidad,experiencia,zona,direccion,modos,seguros,idiomas,dias,horas,bio,servicios,padecimientos,color,verificado,suspendido,tarjeta_ok,foto_url,web,redes,hospital,consultorio');if(error&&error.code==='42703'){const r2=await sb.from('doctores').select('id,nombre,especialidad,cedula,universidad,experiencia,zona,direccion,modos,seguros,idiomas,dias,horas,bio,servicios,padecimientos,color,verificado,suspendido,tarjeta_ok');if(r2.error)throw r2.error;return r2.data.map(toCamel)}if(error){if(error.code==='42P01'||error.code==='PGRST205')return [];throw error}return data.map(toCamel)},
     midoc:async()=>{const {data,error}=await sb.rpc('mi_doctor');if(error){if(error.code==='PGRST202'||error.code==='42883')return null;throw error}return data&&data[0]?toCamel(data[0]):null},
     citasdoc:async()=>{const id=S.miDoc&&S.miDoc.id;if(!id)return [];return chk(await sb.from('citas').select('*').eq('doctor_id',id)).map(toCamel)}
   };
   const refetch=async k=>{try{const v=await fetchers[k]();L[k].forEach(f=>f(v))}catch(e){fail()}};
   const ch=sb.channel('hd-'+me)
+    // Señales públicas: dicen qué tabla cambió, sin datos; la app vuelve a leer con sus permisos.
+    .on('postgres_changes',{event:'*',schema:'public',table:'senales'},p=>{const t=p.new&&p.new.tabla;if(t==='ocupados')refetch('ocupados');else if(t==='resenas')refetch('resenas');else if(t==='doctores'){refetch('doctores');if(rol==='medico')refetch('midoc')}})
     .on('postgres_changes',{event:'*',schema:'public',table:'ocupados'},()=>refetch('ocupados'))
     .on('postgres_changes',{event:'*',schema:'public',table:'resenas'},()=>refetch('resenas'))
     .on('postgres_changes',{event:'*',schema:'public',table:'doctores'},()=>{refetch('doctores');if(rol==='medico')refetch('midoc')})
@@ -877,38 +889,59 @@ function SupabaseStore(sb,user){
     onPerfil:on('perfil'), onCitas:on('citas'), onOcupados:on('ocupados'), onResenas:on('resenas'),
     async savePerfil(p){const x={id:me,...toSnake(p)};for(const k of ['plan','socio','renovacion','plan_estado','stripe_customer_id','stripe_subscription_id'])delete x[k];chk(await safe(y=>sb.from('perfiles').upsert(y),x));await refetch('perfil')},
     refresh:k=>refetch(k),
-    async addCita(c){const d=chk(await safe(x=>sb.from('citas').insert(x).select('id').single(),toSnake(c)));await refetch('citas');return d.id},
-    async updateCita(id,patch){chk(await safe(x=>sb.from('citas').update(x).eq('id',id),toSnake(patch)));await refetch('citas')},
-    async claim(key,data){const {error}=await sb.from('ocupados').insert({id:key,...toSnake(data)});
-      if(error){if(error.code==='23505'||error.code==='42501') {await refetch('ocupados');return false} throw error}
-      await refetch('ocupados');return true},
-    async release(key){chk(await sb.from('ocupados').delete().eq('id',key));await refetch('ocupados')},
+    flags:()=>leerFlags(sb),
+    // Reservar, cambiar y cancelar pasan por el servidor: precio, duración y cobertura los calcula la base de datos.
+    async reservar(r){const {data,error}=await sb.rpc('reservar_cita',{p_doctor:r.doctorId,p_servicio:r.servicioId,p_fecha:r.fecha,p_hora:r.hora,p_modalidad:r.modalidad,p_paciente:r.paciente,p_motivo:r.motivo||null,p_usar_membresia:!!r.membresia,p_idem:r.idem});
+      await Promise.all([refetch('citas'),refetch('ocupados')]); if(error) throw error; return toCamel(data)},
+    async reprogramar(id,r){const {data,error}=await sb.rpc('reprogramar_cita',{p_cita:id,p_fecha:r.fecha,p_hora:r.hora,p_modalidad:r.modalidad});
+      await Promise.all([refetch('citas'),refetch('ocupados')]); if(error) throw error; return toCamel(data)},
+    async cancelar(id){const {error}=await sb.rpc('cancelar_cita',{p_cita:id}); await Promise.all([refetch('citas'),refetch('ocupados')]); if(error) throw error},
+    async addCita(){throw {message:'usa_reservar'}},
+    async updateCita(){throw {message:'usa_reservar'}},
+    // Bloqueos del médico
+    async claim(key,data){if(data.tipo!=='bloqueo') throw {message:'usa_reservar'};
+      const {error}=await sb.rpc('bloquear_horario',{p_fecha:data.fecha,p_hora:data.hora}); await refetch('ocupados');
+      if(error){if(['horario_ocupado','no_medico'].includes(error.message)||error.code==='42501') return false; throw error} return true},
+    async release(key){const m=/_(\d{4}-\d{2}-\d{2})_(\d{2})(\d{2})$/.exec(key); if(!m) return;
+      const {error}=await sb.rpc('liberar_bloqueo',{p_fecha:m[1],p_hora:m[2]+':'+m[3]}); await refetch('ocupados'); if(error) throw error},
     async addResena(r){chk(await safe(x=>sb.from('resenas').insert(x),toSnake(r)));await refetch('resenas')},
     async responder(id,texto){const d=chk(await sb.from('resenas').update({respuesta:texto,respondida:new Date().toISOString()}).eq('id',id).select('id'));if(!d||!d.length) throw {code:'no_medico'};await refetch('resenas')},
     async borrarTodo(){
       if(S.perfil&&S.perfil.stripeSubscriptionId){await llamarPagos({accion:'cancelar'})}
-      chk(await sb.from('ocupados').delete().eq('user_id',me).gte('fecha',hoy()));
-      chk(await sb.from('citas').delete().eq('user_id',me));
-      chk(await sb.from('perfiles').delete().eq('id',me));
+      // Cancela las citas futuras, conserva anonimizadas las pasadas (evidencia para conciliación) y borra el perfil.
+      chk(await sb.rpc('borrar_mis_datos'));
       await Promise.all(['ocupados','citas','perfil'].map(refetch));
     }
   };
 }
 
+// Lecturas públicas: solo columnas sin datos del paciente (si la base aún no tiene la actualización 7, usa las de antes).
+async function leerOcupados(sb){
+  let r=await sb.from('ocupados').select('id,doctor_id,fecha,hora,modalidad,tipo,inicio,fin').gte('fecha',hoy());
+  if(r.error&&['42703','PGRST204'].includes(r.error.code)) r=await sb.from('ocupados').select('id,doctor_id,fecha,hora,modalidad,tipo').gte('fecha',hoy());
+  if(r.error) throw r.error; return r.data}
+async function leerResenas(sb){
+  const cols='id,doctor_id,estrellas,texto,fecha,puntualidad,trato,instalaciones,respuesta,respondida';
+  const r=await sb.from('resenas').select(cols); if(r.error) throw r.error; return r.data}
+async function leerFlags(sb){
+  const {data,error}=await sb.from('config_plataforma').select('clave,valor');
+  if(error) return {cobertura:false,venta:false};   // sin la actualización 7: apagado por seguridad
+  const v=k=>(data.find(x=>x.clave===k)||{}).valor===true; return {cobertura:v('cobertura_membresia'),venta:v('venta_membresias')}}
 function GuestStore(sb){
   const L={ocupados:[],resenas:[],doctores:[]};
   const fetchers={
-    ocupados:async()=>{const {data,error}=await sb.from('ocupados').select('id,doctor_id,fecha,hora,modalidad,tipo').gte('fecha',hoy());if(error)throw error;return data.map(toCamel)},
-    resenas:async()=>{const {data,error}=await sb.from('resenas').select('*');if(error)throw error;return data.map(r=>{const x=toCamel(r);delete x.userId;return x})},
+    ocupados:async()=>(await leerOcupados(sb)).map(toCamel),
+    resenas:async()=>(await leerResenas(sb)).map(toCamel),
     doctores:async()=>{let r=await sb.from('doctores').select('id,nombre,especialidad,cedula,universidad,experiencia,zona,direccion,modos,seguros,idiomas,dias,horas,bio,servicios,padecimientos,color,verificado,suspendido,tarjeta_ok,foto_url,web,redes,hospital,consultorio');
       if(r.error&&r.error.code==='42703') r=await sb.from('doctores').select('id,nombre,especialidad,cedula,universidad,experiencia,zona,direccion,modos,seguros,idiomas,dias,horas,bio,servicios,padecimientos,color,verificado,suspendido,tarjeta_ok');
       if(r.error){if(['42P01','PGRST205'].includes(r.error.code))return [];throw r.error}return r.data.map(toCamel)}
   };
   const refetch=async k=>{try{const v=await fetchers[k]();L[k].forEach(f=>f(v))}catch(e){L[k].forEach(f=>f([]))}};
-  const ch=sb.channel('hd-invitado').on('postgres_changes',{event:'*',schema:'public',table:'ocupados'},()=>refetch('ocupados'))
+  const ch=sb.channel('hd-invitado').on('postgres_changes',{event:'*',schema:'public',table:'senales'},p=>{const t=p.new&&p.new.tabla;if(t==='ocupados'||t==='resenas')refetch(t);else if(t==='doctores')refetch('doctores')})
+    .on('postgres_changes',{event:'*',schema:'public',table:'ocupados'},()=>refetch('ocupados'))
     .on('postgres_changes',{event:'*',schema:'public',table:'resenas'},()=>refetch('resenas'));
   const on=k=>cb=>{L[k].push(cb);refetch(k)}; const no=async()=>{throw {code:'login'}};
-  return {modo:'supabase', invitado:true, uid:null, rol:'paciente',
+  return {modo:'supabase', invitado:true, uid:null, rol:'paciente', flags:()=>leerFlags(sb),
     go(){ch.subscribe()}, stop(){try{sb.removeChannel(ch)}catch(e){} for(const k in L) L[k]=[]},
     onPerfil:cb=>setTimeout(()=>cb(null),0), onCitas:cb=>setTimeout(()=>cb([]),0), onOcupados:on('ocupados'), onResenas:on('resenas'), onDoctores:on('doctores'),
     savePerfil:no, addCita:no, updateCita:no, claim:no, release:no, addResena:no, responder:no, borrarTodo:no};
@@ -939,8 +972,19 @@ const S = {
   tab:'descubrir', perfil:undefined, citas:[], ocupados:new Map(), resenas:[],
   f:{q:'',esp:'Todas',seguro:'',modo:'',orden:'recomendados',disp:'',precio:'',fav:false},
   sv:{q:'',tipo:'Todos'}, citasTab:'proximas', confirmCancel:null,
-  sheet:null, nombreSugerido:'', userApi:null, store:null, ready:false
+  sheet:null, nombreSugerido:'', userApi:null, store:null, ready:false,
+  flags:{cobertura:!!CONFIG.COBERTURA_MEMBRESIA, venta:!!CONFIG.VENTA_MEMBRESIAS}
 };
+const coberturaOn=()=>!!(S.flags&&S.flags.cobertura);
+const ventaOn=()=>!!(S.flags&&S.flags.venta);
+// Mensajes para los códigos que devuelve el servidor.
+const ERR_TXT={horario_ocupado:'Ese horario acaba de ocuparse. Elige otro.',medico_no_disponible:'Este profesional no está disponible para reservar en este momento.',
+  servicio_invalido:'Ese servicio ya no está disponible. Elige otro.',fuera_de_agenda:'Ese horario ya no está en la agenda del médico.',modalidad_invalida:'El profesional no ofrece esa modalidad.',
+  sin_cobertura:'Esta cita no se puede cubrir con tu membresía.',paciente_invalido:'El paciente debe ser el titular o un familiar registrado.',cita_cerrada:'Esta cita ya no se puede cambiar ni cancelar.',
+  cita_no_encontrada:'No encontramos esa cita.',sin_perfil:'Completa tu perfil antes de reservar.',sin_sesion:'Inicia sesión para continuar.',no_medico:'Solo el médico de esta agenda puede hacer ese cambio.'};
+const errTxt=(e,def)=>ERR_TXT[e&&(e.message||e.code)]||def;
+// Inicio de un horario (CDMX, UTC−6 sin horario de verano desde 2022). Pendiente: zona por sede.
+const instante=(fecha,hora)=>new Date(fecha+'T'+hora+':00-06:00').getTime();
 let ST;
 
 /* ============ Arranque ============ */
@@ -985,12 +1029,13 @@ function start(store){
   const pill=$('#modePill');
   pill.textContent='Demo'; pill.title = store.modo==='local' ? 'Los datos se guardan en este dispositivo' : 'Datos sincronizados de forma privada'; pill.hidden = store.modo==='supabase' && !CONFIG.DEMO;
   S.rol=store.rol||'paciente';
+  if(store.flags) store.flags().then(f=>{if(f){S.flags=f; if(S.ready) render(true)}}).catch(()=>{});
   store.onDoctores&&store.onDoctores(list=>{DOCS_DB=list.map(mapDoc);if(S.ready)render(true)});
   if(S.rol==='medico'){
     S.tab='agenda'; S.citasDoc=[]; S.miDoc=undefined;
     let pend=3; const fin=()=>{if(--pend===0){S.ready=true;render()}}; const f={m:true,o:true,r:true};
     store.onMiDoc(d=>{const nuevo=!S.miDoc&&d;S.miDoc=d;if(nuevo)store.refresh('citasdoc');if(f.m){f.m=false;fin()}else render(true)});
-    store.onOcupados(list=>{S.ocupados=new Map(list.map(o=>[o.id,o]));if(f.o){f.o=false;fin()}else{render(true);refreshSheetSlots()}});
+    store.onOcupados(list=>{fijaOcupados(list);if(f.o){f.o=false;fin()}else{render(true);refreshSheetSlots()}});
     store.onResenas(r=>{S.resenas=r;if(f.r){f.r=false;fin()}else{render(true);refreshSheetSlots()}});
     store.onCitasDoc(c=>{S.citasDoc=c;if(S.ready)render(true)});
     if(S.volvioTarjeta){toast('Tarjeta registrada. Tu perfil se actualizará en unos segundos.');S.tab='pagosmed';[3000,8000].forEach(t=>setTimeout(()=>store.refresh('midoc'),t))}
@@ -1001,7 +1046,7 @@ function start(store){
   const fijaPerfil=p=>{S.perfil=p||(store.modo!=='supabase'||store.invitado?INVITADO:null); if(p&&S.pantalla==='onb')S.pantalla=null};
   store.onPerfil(p=>{const antes=esInvitado();fijaPerfil(p); if(first.p){first.p=false;done()} else {render(); if(antes&&!esInvitado())retomarPendiente()}});
   store.onCitas(c=>{S.citas=c; if(first.c){first.c=false;done()} else render()});
-  store.onOcupados(list=>{S.ocupados=new Map(list.map(o=>[o.id,o])); if(first.o){first.o=false;done()} else {render(true);refreshSheetSlots()}});
+  store.onOcupados(list=>{fijaOcupados(list); if(first.o){first.o=false;done()} else {render(true);refreshSheetSlots()}});
   store.onResenas(r=>{S.resenas=r; if(first.r){first.r=false;done()} else render(true)});
   if(store.go) store.go();
 }
@@ -1118,7 +1163,7 @@ function viewOnboarding(){
 }
 function trustHTML(){
   return `<div>${I.verified.replace('<svg','<svg style="color:var(--blue)"')}<b>Cédula verificada</b>Cada profesional muestra su cédula ante la SEP.</div>
-  <div>${I.lock}<b>Datos protegidos</b>Tu expediente es privado y solo tú decides quién lo ve.</div>
+  <div>${I.lock}<b>Datos protegidos</b>Tus citas solo las ven tú y el médico que te atiende.</div>
   <div>${I.star}<b>Opiniones reales</b>Solo opinan pacientes que tuvieron cita.</div>`;
 }
 
@@ -1146,13 +1191,13 @@ function docCard(d){
     <button class="doc-hit" data-act="doctor" data-v="${d.id}" aria-label="Ver perfil de ${esc(d.nombre)}">
     <div class="doc-top">${avatar(d)}
       <div class="doc-main">
-        <span class="doc-name">${esc(d.nombre)} <span title="Cédula verificada">${I.verified}</span></span>
+        <span class="doc-name">${esc(d.nombre)} ${d.db&&d.verificado!==false?`<span title="Cédula verificada">${I.verified}</span>`:''}</span>
         <span class="muted small">${esc(d.esp)}${d.exp?` · ${d.exp} años de experiencia`:''}</span>
         ${sede(d)?`<span class="sede small">${I.hosp}<span>${esc(sede(d))}</span></span>`:''}
         <span class="doc-meta">${c?`<span><span class="stars">★ ${c.prom.toFixed(1)}</span> (${c.n})</span>`:''}<span>${esc(d.zona)}${d.km?` · ${d.km} km`:''}</span><span class="price num">desde ${money(Math.min(...d.servicios.map(x=>x.p)))}</span></span>
       </div>
     </div>
-    <div class="row wrap" style="gap:6px">${!d.db&&S.store&&S.store.modo==='supabase'?'<span class="tag warn">Perfil de ejemplo</span>':''}${d.modos.includes('Videoconsulta')?`<span class="tag blue">${I.video} Videoconsulta</span>`:''}${d.seguros.slice(0,3).map(s=>`<span class="tag">${esc(s)}</span>`).join('')}</div>
+    <div class="row wrap" style="gap:6px">${!d.db?'<span class="tag warn">Perfil de ejemplo</span>':''}${d.modos.includes('Videoconsulta')?`<span class="tag blue">${I.video} Videoconsulta</span>`:''}${d.seguros.slice(0,3).map(s=>`<span class="tag">${esc(s)}</span>`).join('')}</div>
     </button>
     ${docCalHTML(d)}
     <div class="doc-foot">${libres.length?`<span class="small muted">Próximos horarios</span><div class="quick">${libres.map(x=>`<button class="qslot num" data-act="rapido" data-v="${d.id}|${x.fecha}|${x.hora}"><small>${esc(relDia(x.fecha))}</small>${x.hora}</button>`).join('')}<button class="qslot more" data-act="doctor" data-v="${d.id}">Más<small>horarios</small></button></div>`:'<span class="small muted">Sin horarios en las próximas 2 semanas</span>'}</div>
@@ -1174,14 +1219,14 @@ function viewDescubrir(){
   const prox=citasProximas()[0];
   return `<section class="hero"><span class="logo-wm" aria-hidden="true"></span><div class="stack" style="gap:4px;position:relative"><p>Hola${n?', '+esc(n):''}</p><h1>¿Con quién quieres consultarte?</h1><p class="hero-sub">Encuentra a tu especialista, compara precios y opiniones, y agenda en minutos.</p></div>
     <div class="search" style="position:relative">${I.search}<input class="input" id="q" type="search" placeholder="Especialidad, nombre o colonia" value="${esc(S.f.q)}" aria-label="Buscar profesional"></div>
-    <ul class="hero-side" aria-label="Por qué Health Digital"><li>${I.verified}<span><b>Cédula verificada</b>Revisamos cada cédula ante la SEP</span></li><li>${I.cal}<span><b>Agenda en 1 minuto</b>Horarios reales, sin llamadas</span></li><li>${I.lock}<span><b>Datos protegidos</b>Tu expediente solo lo ves tú</span></li></ul></section>
+    <ul class="hero-side" aria-label="Por qué Health Digital"><li>${I.verified}<span><b>Cédula verificada</b>Revisamos cada cédula ante la SEP</span></li><li>${I.cal}<span><b>Agenda en 1 minuto</b>Horarios reales, sin llamadas</span></li><li>${I.lock}<span><b>Datos protegidos</b>Tus citas solo las ven tú y tu médico</span></li></ul></section>
   ${prox?`<button class="card row" data-act="tab" data-v="citas" style="text-align:left;background:var(--brand-soft);border-color:transparent">
       <div class="li-ic" style="background:var(--surface)">${I.cal}</div>
       <div class="grow" style="min-width:0;flex:1"><b>Tu próxima cita: ${relDia(prox.fecha)}, ${prox.hora}</b><p class="small muted">${esc(docById(prox.doctorId)?.nombre)} · ${esc(prox.modalidad)}</p></div>${I.chev}</button>`:''}
   <div class="quick-acts">
     <button data-act="soloVideo"><span class="li-ic">${I.video}</span><b>En línea</b><small>Videoconsulta</small></button>
     <button data-act="tab" data-v="salud"><span class="li-ic">${I.leaf}</span><b>Salud</b><small>Artículos y e-books</small></button>
-    <button data-act="tab" data-v="membresia"><span class="li-ic">${I.card}</span><b>${S.perfil.plan?'Mi credencial':'Membresía'}</b><small>${S.perfil.plan?'Lista para usar':'Desde $300/mes'}</small></button>
+    <button data-act="tab" data-v="membresia"><span class="li-ic">${I.card}</span><b>${S.perfil.plan?'Mi credencial':'Membresía'}</b><small>${S.perfil.plan?'Lista para usar':!ventaOn()?'Próximamente':'Desde $300/mes'}</small></button>
   </div>
   <div class="desc-layout"><aside class="filtros-lado" aria-label="Filtros"><h3 class="solo-pc">Especialidad</h3>
   <div class="chips" role="group" aria-label="Especialidad">${especialidades().map(e=>`<button class="chip" data-act="esp" data-v="${esc(e)}" aria-pressed="${S.f.esp===e}">${esc(e)}</button>`).join('')}</div>
@@ -1197,7 +1242,7 @@ function viewDescubrir(){
   </div>
   </aside>
   <div class="stack" id="results">${resultsHTML()}</div></div>
-  ${S.perfil.plan?'':`<button class="upsell" data-act="tab" data-v="membresia"><span class="logo-iso" style="width:40px;height:36px"></span><span style="flex:1;min-width:0"><b>Consultas incluidas desde $300 al mes</b><span class="small muted" style="display:block">Agenda preferente, credencial digital y 15% en estudios.</span></span>${I.chev}</button>`}
+  ${S.perfil.plan||!ventaOn()?'':`<button class="upsell" data-act="tab" data-v="membresia"><span class="logo-iso" style="width:40px;height:36px"></span><span style="flex:1;min-width:0"><b>Consultas incluidas desde $300 al mes</b><span class="small muted" style="display:block">Agenda preferente, credencial digital y 15% en estudios.</span></span>${I.chev}</button>`}
   <div class="trust">${trustHTML()}</div>`;
 }
 
@@ -1208,11 +1253,11 @@ function viewServicios(){
   const r=PROVEEDORES.filter(p=>(S.sv.tipo==='Todos'||p.tipo===S.sv.tipo)&&(!t||(p.nombre+' '+p.servicios.join(' ')+' '+p.zona).toLowerCase().includes(t)));
   const miembro=!!S.perfil.plan;
   return `<section class="stack" style="gap:6px"><h1>Servicios</h1><p class="muted">Laboratorios, imagen y hospitales cerca de ti.</p></section>
-  ${miembro?`<div class="note">${I.info}<span>Como miembro tienes <b>15% de descuento</b>. Muestra tu credencial digital al llegar.</span></div>`:`<button class="note" data-act="tab" data-v="membresia" style="border:0;text-align:left">${I.info}<span>Con una membresía obtienes 15% de descuento en estudios. <b style="color:var(--blue)">Ver planes</b></span></button>`}
+  ${!ventaOn()?`<div class="note">${I.info}<span>Directorio informativo: precios aproximados publicados por cada lugar. Confirma costos y disponibilidad directamente con ellos.</span></div>`:miembro?`<div class="note">${I.info}<span>Como miembro tienes <b>15% de descuento</b>. Muestra tu credencial digital al llegar.</span></div>`:`<button class="note" data-act="tab" data-v="membresia" style="border:0;text-align:left">${I.info}<span>Con una membresía obtienes 15% de descuento en estudios. <b style="color:var(--blue)">Ver planes</b></span></button>`}
   <div class="search">${I.search}<input class="input" id="sq" type="search" placeholder="Ej. hemograma, resonancia, hospital" value="${esc(S.sv.q)}" aria-label="Buscar servicio"></div>
   <div class="chips">${tipos.map(x=>`<button class="chip" data-act="svtipo" data-v="${esc(x)}" aria-pressed="${S.sv.tipo===x}">${esc(x)}</button>`).join('')}</div>
   <div class="stack" id="svres">${r.length?r.map(p=>`<article class="card elev stack" style="gap:10px">
-      <div class="row between" style="align-items:flex-start"><div style="min-width:0"><h3>${esc(p.nombre)}</h3><p class="small muted">${esc(p.tipo)} · ${esc(p.zona)} · ${p.km} km</p></div>${miembro?'<span class="tag ok">−15%</span>':''}</div>
+      <div class="row between" style="align-items:flex-start"><div style="min-width:0"><h3>${esc(p.nombre)}</h3><p class="small muted">${esc(p.tipo)} · ${esc(p.zona)} · ${p.km} km</p></div>${miembro&&ventaOn()?'<span class="tag ok">−15%</span>':''}</div>
       <p class="small"><b>Servicios:</b> ${p.servicios.map(esc).join(', ')}</p>
       <div class="row between wrap"><span class="small muted">${esc(p.horario)}</span><span class="small num"><b>${esc(p.rango)}</b></span></div>
       <a class="btn btn-ghost btn-sm" href="https://www.google.com/maps/search/${encodeURIComponent(p.nombre+' '+p.zona+' CDMX')}" target="_blank" rel="noopener">${I.pin} Cómo llegar</a>
@@ -1255,7 +1300,7 @@ function viewCitas(){
   return `<section class="stack" style="gap:6px"><h1>Mis citas</h1><p class="muted">Consulta, reprograma o cancela tus reservas.</p></section>
   <div class="seg" role="group"><button data-act="citastab" data-v="proximas" aria-pressed="${S.citasTab==='proximas'}">Próximas</button><button data-act="citastab" data-v="historial" aria-pressed="${S.citasTab==='historial'}">Historial</button></div>
   <div class="stack lista-citas">${list.length?list.map(citaCard).join(''):`<div class="card empty">${I.cal}<h3>${S.citasTab==='proximas'?'Aún no tienes citas próximas':'Tu historial está vacío'}</h3><p class="muted small">Reserva con un profesional para comenzar.</p><button class="btn btn-primary btn-sm" data-act="tab" data-v="descubrir">Buscar profesional</button></div>`}</div>
-  <p class="small muted">Cancelación sin costo hasta 24 horas antes de tu cita.</p>`;
+  <p class="small muted">Puedes cancelar o cambiar tu cita sin costo antes de la hora de la consulta.</p>`;
 }
 
 /* ---------- Membresía ---------- */
@@ -1265,7 +1310,7 @@ function usoMes(){
 }
 const conStripe=()=>S.store&&S.store.modo==='supabase';
 function pagoPendiente(){return conStripe()&&S.perfil.planEstado==='past_due'}
-function cupoRestante(){const p=PLANES[S.perfil.plan];if(!p||pagoPendiente()) return 0;return Math.max(0,p.cupo-usoMes())}
+function cupoRestante(){const p=PLANES[S.perfil.plan];if(!p||pagoPendiente()||!coberturaOn()) return 0;return Math.max(0,p.cupo-usoMes())}
 async function llamarPagos(body){
   const {data,error}=await S.sb.functions.invoke('pagos',{body});
   if(error){let msg='Los pagos aún no están disponibles. Inténtalo más tarde.';try{const j=await error.context.json();if(j&&j.error)msg=j.error}catch(e){}throw new Error(msg)}
@@ -1277,7 +1322,7 @@ function planCard(id){
     <div class="row between"><h3>${p.nombre}</h3>${actual?'<span class="tag ok">Plan actual</span>':''}</div>
     <div class="plan-price num">${money(p.precio)} <small>MXN / mes</small></div>
     <ul>${p.beneficios.map(b=>`<li>${I.check}<span>${esc(b)}</span></li>`).join('')}</ul>
-    ${actual?'':`<button class="btn ${S.perfil.plan?'btn-ghost':'btn-primary'} btn-block" data-act="plan" data-v="${id}">${S.perfil.plan?'Cambiar a este plan':'Elegir '+p.nombre}</button>`}
+    ${actual?'':ventaOn()?`<button class="btn ${S.perfil.plan?'btn-ghost':'btn-primary'} btn-block" data-act="plan" data-v="${id}">${S.perfil.plan?'Cambiar a este plan':'Elegir '+p.nombre}</button>`:`<button class="btn btn-ghost btn-block" disabled>Próximamente</button>`}
   </article>`;
 }
 function viewMembresia(){
@@ -1285,7 +1330,8 @@ function viewMembresia(){
   const head=`<section class="stack" style="gap:6px"><h1>Membresía</h1><p class="muted">Consultas incluidas cada mes para ti y tu familia.</p></section>`;
   const notaPago=conStripe()?`<div class="note">${I.lock}<span>Pagos seguros con <b>Stripe</b>. Health Digital nunca ve ni guarda los datos de tu tarjeta. Cancela cuando quieras.</span></div>`:`<div class="note">${I.info}<span>Modo demo: activar un plan no genera ningún cargo.</span></div>`;
   if(S.esperandoPago&&!plan&&Date.now()-S.esperandoPago<60000) return head+`<div class="card elev empty"><div class="ring" style="width:56px;height:56px;border-radius:50%;background:var(--brand-soft);display:grid;place-items:center;color:var(--brand)">${I.card}</div><h3>Activando tu membresía…</h3><p class="small muted">Recibimos tu pago. Tu credencial aparecerá aquí en unos segundos.</p></div>`;
-  if(!plan) return head+notaPago+'<div class="planes">'+planCard('individual')+planCard('familiar')+'</div>';
+  const notaPronto=`<div class="note">${I.info}<span><b>Las membresías abrirán pronto.</b> Primero cerramos convenios por escrito con médicos y laboratorios, para que cada beneficio esté garantizado. Mientras tanto puedes reservar y pagar directamente en el consultorio.</span></div>`;
+  if(!plan) return head+(ventaOn()?notaPago:notaPronto)+'<div class="planes">'+planCard('individual')+planCard('familiar')+'</div>';
   const uso=usoMes(), rest=Math.max(0,plan.cupo-uso);
   const miembros=[{nombre:P.nombre,parentesco:'Titular'},...(P.miembros||[])];
   return head+`
@@ -1517,7 +1563,7 @@ function viewSalud(){
     <div class="search" style="position:relative">${I.search}<input class="input" id="salq" type="search" placeholder="Ej. diabetes, ansiedad, rutina en casa" value="${esc(S.sal.q)}" aria-label="Buscar en salud y nutrición"></div></section>
   <div class="chips" role="group" aria-label="Tema"><button class="chip" data-act="salcat" data-v="todo" aria-pressed="${S.sal.cat==='todo'}">Todo</button>${SALUD_CATS.map(c=>`<button class="chip" data-act="salcat" data-v="${c.id}" aria-pressed="${S.sal.cat===c.id}">${esc(c.n)}</button>`).join('')}</div>
   <div class="filters"><select class="input ${S.sal.target?'on':''}" id="sal-target" aria-label="Para quién"><option value="">Para todos</option>${SALUD_TARGETS.map(x=>`<option ${S.sal.target===x?'selected':''}>${esc(x)}</option>`).join('')}</select></div>
-  ${esMiembro()?`<div class="note" style="background:var(--brand-soft)">${I.card.replace('<svg','<svg style="color:var(--brand)"')}<span>Como miembro tienes <b>${DESC_MIEMBRO*100}% de descuento</b> en todos los e-books y programas.</span></div>`:`<button class="note" data-act="tab" data-v="membresia" style="border:0;text-align:left;width:100%">${I.info}<span>Con una membresía tienes <b>${DESC_MIEMBRO*100}% de descuento</b> en todos los e-books. <b style="color:var(--blue)">Ver planes</b></span></button>`}
+  ${!ventaOn()?'':esMiembro()?`<div class="note" style="background:var(--brand-soft)">${I.card.replace('<svg','<svg style="color:var(--brand)"')}<span>Como miembro tienes <b>${DESC_MIEMBRO*100}% de descuento</b> en todos los e-books y programas.</span></div>`:`<button class="note" data-act="tab" data-v="membresia" style="border:0;text-align:left;width:100%">${I.info}<span>Con una membresía tienes <b>${DESC_MIEMBRO*100}% de descuento</b> en todos los e-books. <b style="color:var(--blue)">Ver planes</b></span></button>`}
   <section class="stack"><div class="section-head"><h2>E-books y programas</h2><span class="small muted">Vista previa gratis</span></div>
     ${ebooks.length?`<div class="eb-grid">${ebooks.map(ebookCard).join('')}</div>`:'<p class="small muted">No hay e-books con esos filtros.</p>'}</section>
   ${packs?`<section class="stack"><h2>Paquetes</h2><div class="pack-grid">${PACKS.map(pk=>{const items=pk.ids.map(ebookDe);const suma=items.reduce((a,e)=>a+e.precio,0);const todos=items.every(e=>tengo(e.id));
@@ -1543,7 +1589,7 @@ function sheetEbook(s){
       ${mio?resto.map(h=>`<article><h3>${esc(h)}</h3><p class="muted"><i>Capítulo en desarrollo. Estará disponible aquí y en tu PDF en cuanto se publique la versión final del e-book.</i></p></article>`).join(''):
       `<div class="candado"><div class="candado-blur"><h3>${esc(resto[0]||'Siguiente capítulo')}</h3><p>Este capítulo continúa con recomendaciones prácticas, ejemplos y ejercicios paso a paso para aplicar en tu día a día…</p></div>
         <div class="candado-cta">${I.lock}<b>Sigue leyendo</b><span class="small muted">Desbloquea ${resto.length} capítulos más y descarga el PDF completo.</span>
-        <button class="btn btn-primary" data-act="comprar" data-v="${e.id}">Comprar por ${money(precioFinal(e.precio))}</button>${esMiembro()?`<span class="small muted">Precio de miembro (antes ${money(e.precio)})</span>`:`<button class="link small" data-act="tab" data-v="membresia">Miembros: ${DESC_MIEMBRO*100}% de descuento</button>`}</div></div>`}
+        ${S.store&&S.store.modo==='supabase'?`<button class="btn btn-ghost" disabled>Venta disponible pronto · ${money(e.precio)}</button>`:`<button class="btn btn-primary" data-act="comprar" data-v="${e.id}">Comprar por ${money(precioFinal(e.precio))} (demo)</button>`}${esMiembro()?`<span class="small muted">Precio de miembro (antes ${money(e.precio)})</span>`:`<button class="link small" data-act="tab" data-v="membresia">Miembros: ${DESC_MIEMBRO*100}% de descuento</button>`}</div></div>`}
     </section>
     <p class="small muted">Contenido de muestra: el e-book final será escrito y revisado por un especialista con cédula profesional. No sustituye la consulta médica.</p>`,
     mio?`<button class="btn btn-primary btn-block" data-act="pdf" data-v="${e.id}">${I.doc} Descargar PDF</button>`:
@@ -1745,13 +1791,15 @@ function viewDocPagos(){
     ${n('por_confirmar')||n('en_revision')?`<p class="small muted">${n('por_confirmar')?`${n('por_confirmar')} por marcar asistencia. `:''}${n('en_revision')?`${n('en_revision')} en revisión: tú marcaste "no asistió" y el paciente dice que sí. Health Digital las revisa antes del cobro.`:''}</p>`:''}
     ${f.length?`<div class="tabla"><table><thead><tr><th>Fecha</th><th>Paciente</th><th>Estado</th><th class="r">Comisión</th></tr></thead><tbody>${f.map(x=>`<tr><td class="num">${esc(fmtCorta(x.fecha))} ${esc(x.hora)}</td><td>${esc(x.paciente)}${x.cubierta?' <span class="tag ok">Membresía</span>':''}</td><td>${esc(ESTADO_TXT[x.estado]||x.estado)}</td><td class="r num">${Number(x.comision)?money(Number(x.comision).toFixed(2)):Number(x.credito)?'+'+money(Number(x.credito).toFixed(2)):'—'}</td></tr>`).join('')}</tbody></table></div>`:'<p class="small muted">Sin consultas en este mes.</p>'}`}
   </div>
-  ${cu.cobros&&cu.cobros.length?`<div class="card elev stack"><h3>Cobros anteriores</h3><div class="list">${cu.cobros.map(c=>`<div><span class="grow"><b style="text-transform:capitalize">${esc(MESES_L[parseYmd(c.periodoInicio).getMonth()])} ${parseYmd(c.periodoInicio).getFullYear()}</b><span class="small muted" style="display:block">${c.consultas} consultas${c.error?' · '+esc(c.error):''}</span></span><span class="num"><b>${money(Math.abs(Number(c.neto)).toFixed(2))}</b><span class="small muted" style="display:block;text-align:right">${({pagado:'Pagado',fallido:'Rechazado',pendiente:'En proceso',a_favor_medico:'A tu favor',sin_cargo:'Sin cargo',en_revision:'En revisión'})[c.estado]||c.estado}</span></span></div>`).join('')}</div></div>`:''}
+  ${cu.cobros&&cu.cobros.length?`<div class="card elev stack"><h3>Cobros anteriores</h3><div class="list">${cu.cobros.map(c=>`<div><span class="grow"><b style="text-transform:capitalize">${esc(MESES_L[parseYmd(c.periodoInicio).getMonth()])} ${parseYmd(c.periodoInicio).getFullYear()}</b><span class="small muted" style="display:block">${c.consultas} consultas${c.error?' · '+esc(c.error):''}</span></span><span class="num"><b>${money(Math.abs(Number(c.neto)).toFixed(2))}</b><span class="small muted" style="display:block;text-align:right">${({pagado:'Pagado',fallido:'Rechazado: actualiza tu tarjeta',pendiente:'Por cobrar',procesando:'En proceso',requiere_accion:'Requiere confirmar en tu banco',a_favor_medico:'A tu favor (transferencia pendiente)',sin_cargo:'Sin cargo',arrastrado:'Pasa al siguiente mes',en_revision:'En revisión'})[c.estado]||c.estado}</span></span></div>`).join('')}</div></div>`:''}
   <div class="card stack"><h3>Cómo se calcula</h3><ul class="reglas">
-    <li><b>Atendida:</b> pagas 10% del precio publicado del servicio.</li>
+    <li><b>Atendida:</b> pagas 10% del precio del servicio que quedó registrado al reservar.</li>
+    <li><b>Cierre:</b> el día 10 de cada mes cobramos el mes anterior. Montos menores a $10 pasan al mes siguiente.</li>
     <li><b>El paciente canceló o no llegó:</b> no pagas nada.</li>
     <li><b>Tú cancelaste:</b> no pagas nada, pero cuenta en tu historial.</li>
     <li><b>Asistencia:</b> tienes 72 h para marcar "no asistió". Si no marcas, cuenta como atendida.</li>
-    <li><b>Revisión:</b> si marcas "no asistió" y el paciente confirma que sí fue, Health Digital lo revisa.</li>
+    <li><b>Revisión:</b> si marcas "no asistió" y el paciente confirma que sí fue, Health Digital lo revisa y te avisa antes de cobrar. Nada en revisión se cobra.</li>
+    <li><b>Rechazo de tarjeta:</b> te avisamos y reintentamos en el siguiente cierre. Solo después de dos rechazos seguidos se pausa tu perfil.</li>
     <li><b>Membresía:</b> el paciente no te paga a ti; Health Digital te acredita el 90% y lo descuenta de tu cobro.</li>
   </ul><button class="link small" data-act="terminosMed" style="align-self:flex-start">Leer términos completos</button></div>`;
 }
@@ -1775,8 +1823,12 @@ function sheetTerminosMed(){
 }
 
 /* ============ Hojas (detalle / reserva / formularios) ============ */
-function openSheet(s){S.sheet=s;renderSheet();document.body.style.overflow='hidden'}
-function closeSheet(){S.sheet=null;S._sig=null;$('#sheetRoot').innerHTML='';document.body.style.overflow=''}
+function openSheet(s){if(!S.sheet) S._foco=document.activeElement; S.sheet=s;renderSheet();document.body.style.overflow='hidden';
+  const app=document.querySelector('.app'); if(app) app.inert=true;
+  requestAnimationFrame(()=>{const sh=document.querySelector('.sheet'); if(!sh) return; if(!sh.contains(document.activeElement)){const h=sh.querySelector('.sheet-head h2'); if(h){h.tabIndex=-1;h.focus()}}})}
+function closeSheet(){const abierto=!!S.sheet; S.sheet=null;S._sig=null;$('#sheetRoot').innerHTML='';document.body.style.overflow='';
+  const app=document.querySelector('.app'); if(app) app.inert=false;
+  if(abierto&&S._foco&&document.contains(S._foco)) try{S._foco.focus()}catch(e){} S._foco=null}
 function sheetFrame(title,body,foot,back,cls){
   return `<div class="sheet-wrap" data-act="scrim"><div class="sheet ${cls||''}" role="dialog" aria-modal="true" aria-label="${esc(title)}">
     <div class="sheet-head">${back?`<button class="icon-btn" data-act="${back}" aria-label="Atrás">${I.back}</button>`:''}<h2>${esc(title)}</h2><button class="icon-btn" data-act="close" aria-label="Cerrar">${I.x}</button></div>
@@ -1811,7 +1863,7 @@ function sheetDoctor(s){
     return sheetFrame('Cita confirmada',`${pasos(3)}<div class="hero-ok"><div class="ring">${I.check}</div><h2>¡Listo, tu cita está confirmada!</h2><p class="muted">${esc(fmtLarga(s.fecha))} a las ${esc(s.hora)}</p></div>
       <div class="card elev"><dl class="kv"><dt>Profesional</dt><dd>${esc(d.nombre)}</dd><dt>Servicio</dt><dd>${esc(servDe(d,s.serv).n)}</dd><dt>Paciente</dt><dd>${esc(s.paciente)}</dd><dt>Modalidad</dt><dd>${esc(s.modo)}</dd><dt>Pago</dt><dd>${s.metodo==='membresia'?'Incluida en tu membresía':money(servDe(d,s.serv).p)+' en consultorio'}</dd><dt>Folio</dt><dd class="num">${esc(s.folio)}</dd></dl></div>
       ${calendarioHTML({doctorId:d.id,fecha:s.fecha,hora:s.hora,modalidad:s.modo,servicio:servDe(d,s.serv).n,folio:s.folio,min:servDe(d,s.serv).min})}
-      <div class="note">${I.bell}<span>${S.perfil.notif?.recordatorios!==false?'Te recordaremos tu cita 24 horas y 2 horas antes.':'Tienes los recordatorios desactivados. Puedes activarlos en Perfil.'}</span></div>`,
+      <div class="note">${I.bell}<span>Agrega la cita a tu calendario para que tu teléfono te la recuerde.</span></div>`,
       `<button class="btn btn-ghost grow" data-act="close">Cerrar</button><button class="btn btn-primary grow" data-act="verCitas">Ver mis citas</button>`);
   }
   if(s.paso==='confirmar'){
@@ -1819,15 +1871,15 @@ function sheetDoctor(s){
     const pacientes=[P.nombre,...(P.plan==='familiar'?(P.miembros||[]).map(m=>m.nombre):[])];
     return sheetFrame('Confirma tu cita',`${pasos(2)}
       <div class="card elev row">${avatar(d,'sm')}<div style="min-width:0;flex:1"><b>${esc(d.nombre)}</b><p class="small muted">${esc(d.esp)}</p></div></div>
-      <div class="card elev"><dl class="kv"><dt>Servicio</dt><dd>${esc(sv.n)}</dd><dt>Fecha</dt><dd>${esc(cap(fmtLarga(s.fecha)))}</dd><dt>Hora</dt><dd class="num">${esc(s.hora)}</dd><dt>Modalidad</dt><dd>${esc(s.modo)}</dd><dt>${s.modo==='Videoconsulta'?'Acceso':'Lugar'}</dt><dd>${s.modo==='Videoconsulta'?'Enlace seguro en la app':esc(lugarCompleto(d))}</dd></dl></div>
+      <div class="card elev"><dl class="kv"><dt>Servicio</dt><dd>${esc(sv.n)}</dd><dt>Fecha</dt><dd>${esc(cap(fmtLarga(s.fecha)))}</dd><dt>Hora</dt><dd class="num">${esc(s.hora)}</dd><dt>Modalidad</dt><dd>${esc(s.modo)}</dd><dt>${s.modo==='Videoconsulta'?'Acceso':'Lugar'}</dt><dd>${s.modo==='Videoconsulta'?'El consultorio te compartirá el enlace':esc(lugarCompleto(d))}</dd></dl></div>
       <div class="field"><label for="b-pac">¿Quién es el paciente?</label><select class="input" id="b-pac">${pacientes.map(p=>`<option ${s.paciente===p?'selected':''}>${esc(p)}</option>`).join('')}</select></div>
       <div class="field"><label for="b-mot">Motivo de la consulta <span class="muted">(opcional)</span></label><textarea class="input" id="b-mot" maxlength="300" placeholder="Ej. revisión anual, dolor de cabeza frecuente">${esc(s.motivo||'')}</textarea><span class="small muted">Solo lo verá tu médico.</span></div>
       <div class="field"><span class="label">Forma de pago</span>
-        <label class="opt"><input type="radio" name="metodo" value="membresia" ${s.metodo==='membresia'?'checked':''} ${rest?'':'disabled'}><span><b>Usar mi membresía</b><span class="small muted" style="display:block">${!sv.mem?'Este servicio no está incluido en la membresía':P.plan?(rest?`Te ${rest===1?'queda 1 consulta':'quedan '+rest+' consultas'} este mes · $0`:'Ya usaste tus consultas de este mes'):'Activa un plan desde $300 al mes'}</span></span></label>
+        ${coberturaOn()?`        <label class="opt"><input type="radio" name="metodo" value="membresia" ${s.metodo==='membresia'?'checked':''} ${rest?'':'disabled'}><span><b>Usar mi membresía</b><span class="small muted" style="display:block">${!sv.mem?'Este servicio no está incluido en la membresía':P.plan?(rest?`Te ${rest===1?'queda 1 consulta':'quedan '+rest+' consultas'} este mes · $0`:'Ya usaste tus consultas de este mes'):'Activa un plan desde $300 al mes'}</span></span></label>`:''}
         <label class="opt"><input type="radio" name="metodo" value="consultorio" ${s.metodo==='consultorio'?'checked':''}><span><b>Pagar en consultorio</b><span class="small muted" style="display:block">${money(sv.p)} MXN · efectivo o tarjeta${d.seguros.length?' · acepta '+esc(d.seguros.join(', ')):''}</span></span></label>
       </div>
       ${s.error?`<p class="err">${esc(s.error)}</p>`:''}
-      <p class="small muted">Al confirmar, compartes tu nombre y motivo solo con ${esc(d.nombre)}. Cancelación sin costo hasta 24 h antes.</p>`,
+      <p class="small muted">Al confirmar, compartes tu nombre y motivo solo con ${esc(d.nombre)}. Puedes cancelar sin costo antes de la hora de tu cita.</p>`,
       `<div class="grow"><span class="small muted">Total</span><div class="price num">${s.metodo==='membresia'?'$0':money(sv.p)}</div></div><button class="btn btn-primary" data-act="confirmar" ${s.busy?'disabled':''}>${s.busy?'Confirmando…':(s.reprogramar?'Confirmar cambio':'Confirmar cita')}</button>`,'atrasDoc');
   }
   const dias=proximosDias(14);
@@ -1835,7 +1887,7 @@ function sheetDoctor(s){
   return sheetFrame(s.reprogramar?'Elige un nuevo horario':'Perfil del profesional',`<div class="pf"><div class="pf-a">
     <section class="row" style="gap:14px;align-items:flex-start">${avatar(d,'lg')}<div class="stack" style="gap:4px;min-width:0">
       <div class="row" style="gap:8px;align-items:flex-start"><h2 style="flex:1">${esc(d.nombre)}</h2><button class="fav-btn static" data-act="fav" data-v="${d.id}" aria-pressed="${(S.perfil.favoritos||[]).includes(d.id)}" aria-label="Guardar en favoritos">${heart((S.perfil.favoritos||[]).includes(d.id))}</button></div><p class="muted">${esc(d.esp)}</p>
-      <div class="row wrap" style="gap:6px"><span class="tag blue">${I.verified} Cédula verificada</span>${c?`<span class="tag"><span class="stars">★ ${c.prom.toFixed(1)}</span>&nbsp;${c.n} ${c.n===1?'opinión':'opiniones'}</span>`:'<span class="tag">Sin opiniones aún</span>'}</div>
+      <div class="row wrap" style="gap:6px">${d.db?`<span class="tag blue">${I.verified} Cédula verificada</span>`:'<span class="tag warn">Perfil de ejemplo · datos ficticios</span>'}${c?`<span class="tag"><span class="stars">★ ${c.prom.toFixed(1)}</span>&nbsp;${c.n} ${c.n===1?'opinión':'opiniones'}</span>`:'<span class="tag">Sin opiniones aún</span>'}</div>
     </div></section>
     <div class="card elev"><dl class="kv">
       <dt>Cédula profesional</dt><dd class="num">${esc(d.cedula)}</dd><dt>Formación</dt><dd>${esc(d.uni)}</dd><dt>Experiencia</dt><dd>${d.exp?d.exp+' años':'—'}</dd><dt>Idiomas</dt><dd>${esc(d.idiomas.join(', '))}</dd>
@@ -1845,7 +1897,7 @@ function sheetDoctor(s){
     ${d.db&&(d.web||Object.keys(d.redes||{}).length)?`<section class="stack" style="gap:8px"><h3>Encuéntrame en</h3><div class="links">${d.web?`<a class="lnk" href="${esc(d.web)}" target="_blank" rel="noopener nofollow ugc">${I.globe}<span>${esc(new URL(d.web).hostname.replace(/^www\./,''))}</span></a>`:''}${REDES.filter(([k])=>(d.redes||{})[k]).map(([k,l])=>`<a class="lnk" href="${esc(d.redes[k])}" target="_blank" rel="noopener nofollow ugc">${I.at}<span>${l}</span></a>`).join('')}</div></section>`:''}
     ${d.pad.length?`<section class="stack" style="gap:8px"><h3>Padecimientos que atiende</h3><div class="row wrap" style="gap:6px">${d.pad.map(x=>`<span class="tag ok">${esc(x)}</span>`).join('')}</div></section>`:''}
     <section class="stack" style="gap:8px"><div class="section-head"><h3>Servicios y precios</h3><span class="small muted">Elige uno para agendar</span></div>
-      <div class="serv-list" role="radiogroup" aria-label="Servicio">${d.servicios.map(x=>`<label class="serv ${s.serv===x.id?'on':''}"><input type="radio" name="serv" value="${x.id}" ${s.serv===x.id?'checked':''}><span class="grow"><b>${esc(x.n)}</b><span class="small muted" style="display:block">${x.min} min${x.mem?' · incluida en membresía':''}</span></span><span class="price num">${money(x.p)}</span></label>`).join('')}</div>
+      <div class="serv-list" role="radiogroup" aria-label="Servicio">${d.servicios.map(x=>`<label class="serv ${s.serv===x.id?'on':''}"><input type="radio" name="serv" value="${x.id}" ${s.serv===x.id?'checked':''}><span class="grow"><b>${esc(x.n)}</b><span class="small muted" style="display:block">${x.min} min${x.mem&&coberturaOn()?' · incluida en membresía':''}</span></span><span class="price num">${money(x.p)}</span></label>`).join('')}</div>
     </section>
     <div class="row" style="align-items:flex-start;gap:8px">${I.pin.replace('<svg','<svg style="width:18px;height:18px;flex:none;margin-top:2px;color:var(--brand)"')}<span class="small">${d.hospital?`<b>${esc(d.hospital)}</b><br>`:''}${d.consultorio?`${esc(d.consultorio)}<br>`:''}${esc(d.dir)}${d.km?` · ${d.km} km`:''}</span></div>
     ${d.seguros.length?`<div class="row wrap" style="gap:6px"><span class="small muted">Acepta:</span>${d.seguros.map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div>`:'<p class="small muted">No trabaja con aseguradoras.</p>'}
@@ -1894,7 +1946,7 @@ function sheetSeguros(){
 function sheetNotif(){
   const n=S.perfil.notif||{recordatorios:true,promos:false};
   const t=(id,lbl,sub,on)=>`<div class="row between card"><div style="min-width:0"><b>${lbl}</b><p class="small muted">${sub}</p></div><label class="toggle"><input type="checkbox" id="${id}" ${on?'checked':''} aria-label="${lbl}"><span></span></label></div>`;
-  return sheetFrame('Notificaciones',`${t('n-rec','Recordatorios de citas','24 h y 2 h antes de cada cita',n.recordatorios!==false)}${t('n-pro','Novedades y promociones','Descuentos en estudios y nuevos médicos',!!n.promos)}`,
+  return sheetFrame('Notificaciones',`${t('n-rec','Recordatorios de citas','Te avisaremos cuando activemos los recordatorios por mensaje',n.recordatorios!==false)}${t('n-pro','Novedades y promociones','Descuentos en estudios y nuevos médicos',!!n.promos)}`,
     `<button class="btn btn-ghost grow" data-act="close">Cancelar</button><button class="btn btn-primary grow" data-act="guardarNotif">Guardar</button>`);
 }
 function sheetAviso(){
@@ -1902,13 +1954,14 @@ function sheetAviso(){
     <div class="note">${I.info}<span>Borrador de ejemplo para la demo. Antes de lanzar, el aviso definitivo debe revisarlo un abogado conforme a la LFPDPPP.</span></div>
     <h3>Qué datos usamos</h3><p>Nombre, teléfono, correo, las citas que reservas y el motivo que escribas. Los datos de salud se consideran sensibles y solo se usan para tu atención.</p>
     <h3>Para qué</h3><p>Agendar y recordarte tus consultas, administrar tu membresía y compartir con tu médico lo necesario para atenderte. No vendemos tus datos ni los usamos para publicidad de terceros.</p>
-    <h3>Quién los ve</h3><p>Tu perfil y tus citas son privados: solo tú los ves. El médico recibe únicamente el horario reservado, la modalidad y, en la versión final, tu nombre y motivo al confirmar.</p>
-    <h3>Tus derechos (ARCO)</h3><p>Puedes acceder, rectificar, cancelar u oponerte al uso de tus datos. Desde Perfil puedes editar tu información o eliminarla por completo.</p>
-    <h3>Opiniones</h3><p>Solo pueden opinar pacientes con una cita atendida, y su nombre no se muestra.</p>
+    <h3>Quién los ve</h3><p>Tu perfil es privado. Cada cita la ven tú y el médico con quien la reservas: tu nombre o el del familiar, el servicio, la fecha y el motivo si lo escribes, para poder atenderte. El personal autorizado de Health Digital solo accede para soporte o revisión de un caso, y queda registro.</p>
+    <h3>Lo que no hacemos</h3><p>Health Digital agenda citas; no es un expediente clínico. No pedimos historia clínica para reservar y el motivo es opcional. No enviamos tu motivo de consulta a herramientas de publicidad.</p>
+    <h3>Tus derechos (ARCO)</h3><p>Puedes acceder, rectificar, cancelar u oponerte al uso de tus datos. Desde Perfil puedes editar tu información o eliminarla. Las consultas ya atendidas se conservan sin tu nombre porque sirven de comprobante para el médico.</p>
+    <h3>Opiniones</h3><p>Solo pueden opinar pacientes cuya asistencia quedó registrada por el médico o por el propio paciente, y su nombre no se muestra.</p>
   </div>`, `<button class="btn btn-primary btn-block" data-act="close">Entendido</button>`);
 }
 function sheetBorrar(){
-  return sheetFrame('Eliminar mis datos',`<div class="confirm-box"><p><b>Se borrarán tu perfil, tu membresía y todas tus citas.</b></p><p class="small">Las citas próximas se cancelarán y sus horarios quedarán libres. Esta acción no se puede deshacer.</p></div>`,
+  return sheetFrame('Eliminar mis datos',`<div class="confirm-box"><p><b>Se borrarán tu perfil y tu membresía, y se cancelarán tus citas próximas.</b></p><p class="small">Las consultas ya atendidas se conservan sin tu nombre como comprobante para el médico. Esta acción no se puede deshacer.</p></div>`,
     `<button class="btn btn-ghost grow" data-act="close">Conservar mis datos</button><button class="btn btn-danger grow" data-act="borrarSi">Eliminar todo</button>`);
 }
 function sheetOpinar(s){
@@ -1966,9 +2019,24 @@ async function confirmarCita(){
   const s=S.sheet; const d=docById(s.id); const sv=servDe(d,s.serv);
   s.paciente=$('#b-pac').value; s.motivo=$('#b-mot').value.trim();
   const m=document.querySelector('input[name="metodo"]:checked'); s.metodo=m?m.value:'consultorio';
+  if(s.metodo==='membresia'&&!coberturaOn()) s.metodo='consultorio';
   if(s.metodo==='membresia'&&!sv.mem){s.error='Este servicio no está incluido en la membresía.';renderSheet();return}
   if(s.metodo==='membresia'&&!cupoRestante()&&!(s.reprogramar&&S.citas.find(c=>c.id===s.reprogramar)?.cubierta)){s.error='Ya no te quedan consultas incluidas este mes.';renderSheet();return}
+  if(S.store.modo==='supabase'&&!d.db){s.error='Este es un perfil de ejemplo: no se puede reservar.';renderSheet();return}
+  if(s.busy) return;
   s.busy=true; s.error=''; renderSheet();
+  if(ST.reservar){
+    s.idem=s.idem||('r-'+uid()+'-'+Date.now().toString(36));   // el mismo identificador en cada reintento
+    try{
+      const c=s.reprogramar?await ST.reprogramar(s.reprogramar,{fecha:s.fecha,hora:s.hora,modalidad:s.modo})
+        :await ST.reservar({doctorId:d.id,servicioId:sv.id,fecha:s.fecha,hora:s.hora,modalidad:s.modo,paciente:s.paciente,motivo:s.motivo,membresia:s.metodo==='membresia',idem:s.idem});
+      s.folio=c.folio; s.metodo=c.cubierta?'membresia':'consultorio'; s.precioFinal=c.precio; s.busy=false; s.paso='listo'; renderSheet();
+    }catch(e){s.busy=false;
+      if(e&&e.message==='horario_ocupado'){s.paso='elegir';s.hora=null;s.idem=null;renderSheet();toast(ERR_TXT.horario_ocupado);return}
+      if(e&&ERR_TXT[e.message]) s.idem=null;   // error de regla: la siguiente vez es otra solicitud
+      s.error=errTxt(e,'No se pudo confirmar la cita. Revisa tu conexión e inténtalo de nuevo.');renderSheet()}
+    return;
+  }
   const key=slotKey(d.id,s.fecha,s.hora);
   try{
     const ok=await ST.claim(key,{doctorId:d.id,fecha:s.fecha,hora:s.hora,modalidad:s.modo,tipo:'cita',creada:new Date().toISOString()});
@@ -2003,11 +2071,12 @@ document.addEventListener('click',async e=>{
     case 'svtipo': S.sv.tipo=v; render(); break;
     case 'citastab': S.citasTab=v; S.confirmCancel=null; render(); break;
     case 'doctor': {const d=docById(v); const x=proxima(d); openSheet({type:'doctor',id:v,serv:'s0',paso:'elegir',fecha:x?x.fecha:hoy(),hora:null,modo:d.modos[0],paciente:S.perfil.nombre,metodo:cupoRestante()?'membresia':'consultorio'}); break}
-    case 'rapido': {const [id,f,h]=v.split('|'); const d=docById(id); if(!pedirCuenta('Inicia sesión o crea tu cuenta para agendar. Guardamos el horario que elegiste.',{sheet:{type:'doctor',id,serv:'s0',paso:'confirmar',fecha:f,hora:h,modo:d.modos[0]}}))break; openSheet({type:'doctor',id,serv:'s0',paso:'confirmar',fecha:f,hora:h,modo:d.modos[0],paciente:S.perfil.nombre,metodo:cupoRestante()?'membresia':'consultorio'}); break}
+    case 'rapido': {const [id,f,h]=v.split('|'); const d=docById(id); const sv0=d.servicios[0].id; if(S.store.modo==='supabase'&&!d.db){openSheet({type:'doctor',id,serv:sv0,paso:'elegir',fecha:f,hora:null,modo:d.modos[0]});toast('Perfil de ejemplo: todavía no se puede reservar.');break}
+      if(!pedirCuenta('Inicia sesión o crea tu cuenta para agendar. Conservamos el horario que elegiste mientras siga libre.',{sheet:{type:'doctor',id,serv:sv0,paso:'confirmar',fecha:f,hora:h,modo:d.modos[0]}}))break; openSheet({type:'doctor',id,serv:sv0,paso:'confirmar',fecha:f,hora:h,modo:d.modos[0],paciente:S.perfil.nombre,metodo:cupoRestante()?'membresia':'consultorio'}); break}
     case 'fecha': S.sheet.fecha=v; S.sheet.hora=null; document.querySelectorAll('.day').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v)); $('#slotBox').innerHTML=slotsHTML(docById(S.sheet.id),S.sheet); updDocFoot(); break;
     case 'hora': S.sheet.hora=v; document.querySelectorAll('.slot').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v)); updDocFoot(); break;
     case 'modo': S.sheet.modo=v; document.querySelectorAll('[data-act="modo"]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v)); break;
-    case 'continuar': if(S.sheet.hora){const sh={...S.sheet,paso:'confirmar'}; if(!pedirCuenta('Inicia sesión o crea tu cuenta para confirmar tu cita. Guardamos el horario que elegiste.',{sheet:sh}))break; S.sheet.paso='confirmar';renderSheet();$('#sheetBody').scrollTop=0} break;
+    case 'continuar': if(S.sheet.hora){if(S.store.modo==='supabase'&&!docById(S.sheet.id).db){toast('Perfil de ejemplo: todavía no se puede reservar.');break} const sh={...S.sheet,paso:'confirmar'}; if(!pedirCuenta('Inicia sesión o crea tu cuenta para confirmar tu cita. Conservamos el horario que elegiste mientras siga libre.',{sheet:sh}))break; S.sheet.paso='confirmar';renderSheet();$('#sheetBody').scrollTop=0} break;
     case 'atrasDoc': S.sheet.paso='elegir'; renderSheet(); break;
     case 'confirmar': confirmarCita(); break;
     case 'verCitas': closeSheet(); S.tab='citas'; S.citasTab='proximas'; render(); window.scrollTo(0,0); break;
@@ -2015,14 +2084,14 @@ document.addEventListener('click',async e=>{
     case 'ics': try{descargarICS(JSON.parse(v))}catch(err){toast('No se pudo crear el archivo del calendario.')} break;
     case 'cancelar': S.confirmCancel=v; render(true); break;
     case 'cancelarNo': S.confirmCancel=null; render(true); break;
-    case 'cancelarSi': {const c=S.citas.find(x=>x.id===v); S.confirmCancel=null; try{await ST.updateCita(v,{estado:'cancelada',canceladaEn:new Date().toISOString()}); if(c.slot) await ST.release(c.slot); toast('Cita cancelada. El horario quedó libre.')}catch(err){toast('No se pudo cancelar. Inténtalo de nuevo.')} break}
+    case 'cancelarSi': {const c=S.citas.find(x=>x.id===v); S.confirmCancel=null; try{if(ST.cancelar) await ST.cancelar(v); else {await ST.updateCita(v,{estado:'cancelada',canceladaEn:new Date().toISOString()}); if(c.slot) await ST.release(c.slot)} toast('Cita cancelada. El horario quedó libre.')}catch(err){toast(errTxt(err,'No se pudo cancelar. Inténtalo de nuevo.'))} render(true); break}
     case 'reprogramar': {const c=S.citas.find(x=>x.id===v); const d=docById(c.doctorId); openSheet({type:'doctor',id:d.id,serv:(d.servicios.find(x=>x.n===c.servicio)||d.servicios[0]).id,paso:'elegir',fecha:c.fecha,hora:null,modo:c.modalidad,paciente:c.paciente,motivo:c.motivo,metodo:c.cubierta?'membresia':'consultorio',reprogramar:c.id}); break}
     case 'simular': {const c=S.citas.find(x=>x.id===v); try{await ST.updateCita(v,{estado:'completada'}); if(c.slot) await ST.release(c.slot); S.citasTab='historial'; render(); toast('Consulta marcada como atendida. Ya puedes calificarla.')}catch(err){toast('No se pudo actualizar.')} break}
     case 'opinar': openSheet({type:'opinar',citaId:v,estrellas:0,texto:''}); break;
     case 'estrella': S.sheet.texto=$('#r-txt').value; S.sheet.estrellas=Number(v); renderSheet(); break;
     case 'cat': {const [k,n]=v.split('|'); S.sheet.texto=$('#r-txt').value; S.sheet[k]=Number(n); renderSheet(); break}
     case 'publicarResena': {const s=S.sheet; const c=S.citas.find(x=>x.id===s.citaId); try{await ST.addResena({doctorId:c.doctorId,citaId:c.id,estrellas:s.estrellas,puntualidad:s.puntualidad||null,trato:s.trato||null,instalaciones:s.instalaciones||null,texto:$('#r-txt').value.trim().slice(0,400),fecha:hoy()}); closeSheet(); toast('¡Gracias! Tu opinión ya está publicada.')}catch(err){toast('No se pudo publicar. Inténtalo de nuevo.')} break}
-    case 'plan': if(!pedirCuenta('Crea tu cuenta para activar tu membresía.',{tab:'membresia',sheet:{type:'plan',plan:v}}))break; openSheet({type:'plan',plan:v}); break;
+    case 'plan': if(!ventaOn()){toast('Las membresías abrirán pronto.');break} if(!pedirCuenta('Crea tu cuenta para activar tu membresía.',{tab:'membresia',sheet:{type:'plan',plan:v}}))break; openSheet({type:'plan',plan:v}); break;
     case 'portalPago': try{t.disabled=true;const r=await llamarPagos({accion:'portal'});if(r.url) location.href=r.url}catch(err){toast(err.message)}finally{t.disabled=false} break;
     case 'activarPlan': if(conStripe()){const sh=S.sheet;sh.busy=true;sh.error='';renderSheet();
         try{const r=await llamarPagos({accion:S.perfil.plan?'cambiar':'checkout',plan:v});
@@ -2074,7 +2143,7 @@ document.addEventListener('click',async e=>{
     case 'ebook': openSheet({type:'ebook',id:v}); break;
     case 'articulo': openSheet({type:'articulo',id:v}); break;
     case 'verEsp': closeSheet(); S.f={...S.f,esp:especialidades().includes(v)?v:'Todas',q:especialidades().includes(v)?'':v}; S.tab='descubrir'; render(); window.scrollTo(0,0); break;
-    case 'comprar': {const [ids,pack]=v.split('|'); const sh={type:'compra',ids:ids.split(','),pack:pack||null}; if(!pedirCuenta('Crea tu cuenta para comprar y guardar tus e-books.',{tab:'salud',sheet:sh}))break; openSheet(sh); break}
+    case 'comprar': {if(S.store&&S.store.modo==='supabase'){toast('La venta de e-books abrirá cuando el contenido esté terminado y revisado.');break} const [ids,pack]=v.split('|'); const sh={type:'compra',ids:ids.split(','),pack:pack||null}; if(!pedirCuenta('Crea tu cuenta para comprar y guardar tus e-books.',{tab:'salud',sheet:sh}))break; openSheet(sh); break}
     case 'pagarEbooks': {const ids=v.split(',').filter(Boolean); guardarCompras(ids); toast(ids.length>1?'¡Listo! Tus e-books ya están desbloqueados.':'¡Listo! Tu e-book ya está desbloqueado.'); openSheet({type:'ebook',id:ids[0]}); render(true); break}
     case 'pdf': descargarPDF(v); break;
     case 'servAdd': {const box=$('#servEd'); const i=box.children.length; if(i>=8){toast('Máximo 8 servicios.');break} box.insertAdjacentHTML('beforeend',servRow({n:'',p:'',min:30,mem:true},i)); break}
@@ -2126,7 +2195,14 @@ document.addEventListener('submit',async e=>{
   try{await ST.savePerfil({nombre:n,telefono:tel,email:m,plan:null,socio:null,renovacion:null,miembros:[],seguros:[],notif:{recordatorios:true,promos:false},avisoAceptado:new Date().toISOString(),creado:new Date().toISOString()})}
   catch(err){fail('No se pudo crear tu perfil. Revisa tu conexión e inténtalo de nuevo.')}
 });
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.sheet) closeSheet()});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&S.sheet){closeSheet();return}
+  if(e.key==='Tab'&&S.sheet){const sh=document.querySelector('.sheet'); if(!sh) return;
+    const f=[...sh.querySelectorAll('button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')].filter(x=>x.offsetParent!==null);
+    if(!f.length) return; const a=f[0], z=f[f.length-1];
+    if(!sh.contains(document.activeElement)){e.preventDefault();a.focus();return}
+    if(e.shiftKey&&document.activeElement===a){e.preventDefault();z.focus()} else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus()}}
+});
 
 boot();
 </script>

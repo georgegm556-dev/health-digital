@@ -23,6 +23,7 @@ Tiempo aproximado: 15 minutos. No necesitas saber programar.
 1. En el menú de la izquierda abre **SQL Editor** y luego **New query**.
 2. Abre el archivo **supabase.sql**, copia **todo** su contenido y pégalo.
 3. Presiona **Run**. Debe aparecer "Success. No rows returned".
+4. Después corre también **actualizacion-7-seguridad.sql** (reservas, precios y cobros validados en el servidor). Lee antes **SEGURIDAD.md**.
 
 Si después necesitas volver a correrlo, puedes hacerlo sin problema: no borra nada.
 

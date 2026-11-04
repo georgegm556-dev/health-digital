@@ -1,5 +1,9 @@
 # Health Digital · Cómo activar los pagos con Stripe
 
+> **Importante (actualización 7):** las membresías están **apagadas** hasta tener convenios y tarifas con médicos (ver SEGURIDAD.md). Puedes configurar Stripe y probar el cobro de comisiones a médicos, pero la venta de membresías no se activa hasta que corras en SQL Editor:
+> `update config_plataforma set valor = 'true' where clave in ('venta_membresias', 'cobertura_membresia');`
+> Hazlo solo después de validar la economía de los planes.
+
 Incluye dos tipos de cobro:
 - **Membresías de pacientes:** $300 y $500 al mes, con cobro automático.
 - **Comisión del 10% a médicos:** el médico registra su tarjeta y cada mes se le cobra el 10% de las consultas que atendió.
@@ -116,6 +120,7 @@ En Supabase → **SQL Editor → New query**, corre estos dos archivos, uno por 
 2. `actualizacion-4-medicos.sql`
 3. `actualizacion-5-fotos.sql`: foto de perfil, página web y redes de los médicos
 4. `actualizacion-6-hospital.sql`: hospital y consultorio de los médicos
+5. `actualizacion-7-seguridad.sql`: reservas, precios y cobros validados en el servidor. **Pruébala primero en un proyecto de staging** y publica la app y las funciones nuevas en el mismo momento (ver SEGURIDAD.md §5)
 
 Desde ese momento:
 - solo un pago real de Stripe puede activar un plan;
@@ -123,7 +128,12 @@ Desde ese momento:
 
 ## Paso 8.5 · Programa el cobro mensual a médicos
 
-El cobro de comisiones se hace solo el **día 4 de cada mes a las 10:00 a. m.** (hora de la Ciudad de México).
+El cobro de comisiones se hace solo el **día 10 de cada mes a las 10:00 a. m.** (hora de la Ciudad de México). Así ya cerraron las ventanas de asistencia del mes anterior: 72 h del médico y 7 días del paciente.
+
+Si ya habías programado el día 4, primero bórralo:
+```sql
+select cron.unschedule('cobro-comisiones-medicos');
+```
 
 1. En Supabase ve a **Database → Extensions**. Busca y activa **pg_cron** y **pg_net**.
 2. En **SQL Editor → New query** pega esto. Cambia `TU_CRON_SECRET` por el mismo valor del Paso 4 y presiona **Run**:
@@ -131,7 +141,7 @@ El cobro de comisiones se hace solo el **día 4 de cada mes a las 10:00 a. m.** 
 ```sql
 select cron.schedule(
   'cobro-comisiones-medicos',
-  '0 16 4 * *',
+  '0 16 10 * *',
   $$ select net.http_post(
        url := 'https://kzajozfetwfmbxojgnol.supabase.co/functions/v1/cobrar-comisiones',
        headers := jsonb_build_object('Content-Type','application/json','x-cron-secret','TU_CRON_SECRET'),
@@ -139,7 +149,9 @@ select cron.schedule(
 );
 ```
 
-`0 16 4 * *` significa día 4 a las 16:00 UTC, que son las 10:00 en la Ciudad de México.
+`0 16 10 * *` significa día 10 a las 16:00 UTC, que son las 10:00 en la Ciudad de México.
+
+Si la ejecución falla a la mitad, puedes volver a correrla el mismo día: no cobra dos veces.
 
 ## Paso 8.6 · Cómo das de alta a un médico
 
@@ -160,10 +172,11 @@ update public.doctores set verificado = true where cedula = '12345678';
 select c.id, d.nombre, c.fecha, c.hora, c.paciente
   from citas c join doctores d on d.id = c.doctor_id
  where c.asistencia_medico = 'no_asistio' and c.asistencia_paciente = 'asistio';
--- Resolver a favor de Health Digital (sí se cobra):
-update public.citas set asistencia_medico = 'asistio' where id = 'ID_DE_LA_CITA';
--- Resolver a favor del médico (no se cobra):
-update public.citas set asistencia_paciente = 'no_asistio' where id = 'ID_DE_LA_CITA';
+-- Resolver (queda registrado quién decidió y con qué evidencia).
+-- A favor del cobro: primero avisa al médico y pon true en el último dato.
+select resolver_revision('ID_DE_LA_CITA', 'asistio', 'Tu nombre', 'Qué evidencia revisaste', true);
+-- A favor del médico (no se cobra):
+select resolver_revision('ID_DE_LA_CITA', 'no_asistio', 'Tu nombre', 'Qué evidencia revisaste', true);
 ```
 
 Cuando ya tengas médicos reales, abre `index.html` y cambia `MEDICOS_EJEMPLO: true` por `false` para ocultar los 8 médicos de ejemplo.
@@ -178,7 +191,7 @@ Cuando ya tengas médicos reales, abre `index.html` y cambia `MEDICOS_EJEMPLO: t
    - Nombre y código postal: los que quieras
 3. Al pagar, regresas a la app y en unos segundos aparece tu **credencial** con número de socio.
 4. Para el médico: entra con una cuenta de médico, ve a **Pagos → Registrar tarjeta**, usa `4242 4242 4242 4242` y verifícalo con el SQL del Paso 8.6.
-5. Para probar el cobro mensual sin esperar al día 4, en SQL Editor corre esto (con tu `CRON_SECRET`):
+5. Para probar el cobro mensual sin esperar al día 10, en SQL Editor corre esto (con tu `CRON_SECRET`):
 
 ```sql
 select net.http_post(
