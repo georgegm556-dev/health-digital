@@ -1,5 +1,18 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0E7C8C">
+<meta name="format-detection" content="telephone=no">
 <title>Health Digital</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<script>
+/* Detecta el tipo de dispositivo y lo deja en <html data-disp="movil|tablet|pc"> (el CSS usa las mismas reglas). */
+(function(){var h=document.documentElement,mq=function(q){return window.matchMedia&&matchMedia(q).matches};
+function fija(){h.setAttribute('data-disp',mq('(min-width:1100px) and (hover:hover) and (pointer:fine)')?'pc':mq('(min-width:768px) and (min-height:560px)')?'tablet':'movil')}
+fija();addEventListener('resize',fija);addEventListener('orientationchange',fija)})();
+</script>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -369,7 +382,7 @@ svg.chev{width:18px;height:18px;flex:none;color:var(--muted)}
 @media (max-width:380px){.slots{grid-template-columns:repeat(3,minmax(0,1fr))}.trust{grid-template-columns:1fr}}
 
 /* ===== Tablet (768 px o más): contenido más ancho, dos columnas, hojas como ventana centrada ===== */
-@media (min-width:768px){
+@media (min-width:768px) and (min-height:560px){
   .app{max-width:980px}
   .top,main{padding-left:max(28px,env(safe-area-inset-left,0px));padding-right:max(28px,env(safe-area-inset-right,0px))}
   main{gap:22px}
@@ -401,12 +414,12 @@ svg.chev{width:18px;height:18px;flex:none;color:var(--muted)}
 .desc-layout,.filtros-lado,.pf,.pf-a,.pf-b,.pf-side,.perfil-grid{display:flex;flex-direction:column;min-width:0}
 .desc-layout,.filtros-lado,.perfil-grid{gap:18px}
 .pf,.pf-a,.pf-b{gap:16px}
-@media (min-width:768px){
+@media (min-width:768px) and (min-height:560px){
   .hero-sub{display:block;max-width:52ch}
   .perfil-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
 }
 /* ===== Computadora (1100 px o más): menú arriba, filtros a la izquierda, perfil del médico en dos columnas ===== */
-@media (min-width:1100px){
+@media (min-width:1100px) and (hover:hover) and (pointer:fine){
   body{font-size:15.5px}
   .app{max-width:none}
   .top{padding:0 32px}
@@ -513,7 +526,7 @@ svg.chev{width:18px;height:18px;flex:none;color:var(--muted)}
   .pie-col button:hover{color:var(--brand)}
   .pie-legal{max-width:1280px;margin:28px auto 0;padding-top:16px;border-top:1px solid var(--line)}
 }
-@media (min-width:1100px) and (max-width:1279px){
+@media (min-width:1100px) and (hover:hover) and (pointer:fine) and (max-width:1279px){
   .nav button{padding:0 9px;font-size:.88rem}
   .nav button svg{display:none}
   .desc-layout{grid-template-columns:250px minmax(0,1fr);gap:22px}
@@ -523,7 +536,7 @@ svg.chev{width:18px;height:18px;flex:none;color:var(--muted)}
   #results .doc .avatar{width:72px;height:72px}
   .pf{grid-template-columns:minmax(0,1fr) 380px}
 }
-@media (min-width:1100px) and (prefers-reduced-motion:reduce){.sheet{animation:none}}
+@media (min-width:1100px) and (hover:hover) and (pointer:fine) and (prefers-reduced-motion:reduce){.sheet{animation:none}}
 @media (hover:hover){.doc:hover,.eb-card:hover .cover,.art:hover{transform:translateY(-2px)}.doc,.cover,.art{transition:transform .15s ease}}
 </style>
 
