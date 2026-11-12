@@ -393,6 +393,10 @@ svg.chev{width:18px;height:18px;flex:none;color:var(--muted)}
   .redes-ed{grid-template-columns:repeat(3,minmax(0,1fr))}
   .toast{top:calc(76px + env(safe-area-inset-top,0px))}
 }
+/* ===== Verificación del médico ===== */
+.verif-paso{display:flex;flex-direction:column;gap:6px;padding:12px 0;border-top:1px solid var(--line)}
+.verif-barra{height:6px;border-radius:99px;background:var(--brand-soft);overflow:hidden}
+.verif-barra span{display:block;height:100%;background:var(--brand);border-radius:99px;transition:width .3s ease}
 /* ===== Piezas que solo se muestran en pantallas grandes (ocultas en celular) ===== */
 .solo-pc,.hero-side,.hero-sub,.doc-cal,.pie{display:none}
 .desc-layout,.filtros-lado,.pf,.pf-a,.pf-b,.pf-side,.perfil-grid{display:flex;flex-direction:column;min-width:0}
@@ -692,6 +696,7 @@ function mapDoc(r){const serv=(r.servicios&&r.servicios.length)?r.servicios:[{id
     zona:r.zona,dir:r.direccion,hospital:r.hospital||null,consultorio:r.consultorio||null,km:null,seguros:r.seguros||[],modos:r.modos&&r.modos.length?r.modos:['Presencial'],idiomas:r.idiomas&&r.idiomas.length?r.idiomas:['Español'],
     dias:r.dias||[],horas:r.horas||[],bio:r.bio||'',servicios:serv,pad:r.padecimientos||[],precio:serv[0].p,
     foto:r.fotoUrl||null,web:r.web||null,redes:r.redes||{},
+    espOk:!!r.espVerificada,consejoOk:!!r.consejoVerificado,consultorioOk:!!r.consultorioVerificado,
     oculto:!(r.verificado&&r.tarjetaOk&&!r.suspendido)}}
 const SEGUROS = ['GNP','AXA','MetLife','Seguros Monterrey','Bupa'];
 const PROVEEDORES = [
@@ -858,7 +863,7 @@ function SupabaseStore(sb,user){
     citas:async()=>chk(await sb.from('citas').select('*').eq('user_id',me)).map(toCamel),
     ocupados:async()=>(await leerOcupados(sb)).map(toCamel),
     resenas:async()=>{const pub=await leerResenas(sb);const {data}=await sb.rpc('mis_resenas');const mias=new Map((data||[]).map(r=>[r.id,r.cita_id]));return pub.map(r=>{const x=toCamel(r);if(mias.has(x.id))x.citaId=mias.get(x.id);return x})},
-    doctores:async()=>{const {data,error}=await sb.from('doctores').select('id,nombre,especialidad,cedula,universidad,experiencia,zona,direccion,modos,seguros,idiomas,dias,horas,bio,servicios,padecimientos,color,verificado,suspendido,tarjeta_ok,foto_url,web,redes,hospital,consultorio');if(error&&error.code==='42703'){const r2=await sb.from('doctores').select('id,nombre,especialidad,cedula,universidad,experiencia,zona,direccion,modos,seguros,idiomas,dias,horas,bio,servicios,padecimientos,color,verificado,suspendido,tarjeta_ok');if(r2.error)throw r2.error;return r2.data.map(toCamel)}if(error){if(error.code==='42P01'||error.code==='PGRST205')return [];throw error}return data.map(toCamel)},
+    doctores:async()=>(await leerDoctores(sb)).map(toCamel),
     midoc:async()=>{const {data,error}=await sb.rpc('mi_doctor');if(error){if(error.code==='PGRST202'||error.code==='42883')return null;throw error}return data&&data[0]?toCamel(data[0]):null},
     citasdoc:async()=>{const id=S.miDoc&&S.miDoc.id;if(!id)return [];return chk(await sb.from('citas').select('*').eq('doctor_id',id)).map(toCamel)}
   };
@@ -875,12 +880,18 @@ function SupabaseStore(sb,user){
   return {
     modo:'supabase', uid:me, email:user.email||'', rol,
     onDoctores:on('doctores'), onMiDoc:on('midoc'), onCitasDoc:on('citasdoc'),
-    async saveDoctor(d,nuevo){const x=toSnake(d);for(const k of ['verificado','suspendido','tarjeta_ok','comision','stripe_customer_id','stripe_payment_method','creado'])delete x[k];
+    async saveDoctor(d,nuevo){const x=toSnake(d);for(const k of ['verificado','suspendido','tarjeta_ok','comision','stripe_customer_id','stripe_payment_method','creado','esp_verificada','consejo_verificado','consultorio_verificado','verificacion_nota'])delete x[k];
       if(nuevo){chk(await safe(y=>sb.from('doctores').insert(y),x))}else{delete x.id;delete x.nombre;delete x.cedula;delete x.user_id;delete x.terminos_aceptados;chk(await safe(y=>sb.from('doctores').update(y).eq('id',d.id),x))}
       await refetch('midoc');await refetch('doctores')},
     async subirFoto(blob){const path=me+'/perfil.jpg';const {error}=await sb.storage.from('fotos-medicos').upload(path,blob,{contentType:'image/jpeg',upsert:true,cacheControl:'3600'});
       if(error) throw error; const {data}=sb.storage.from('fotos-medicos').getPublicUrl(path); return data.publicUrl+'?v='+Date.now()},
     async borrarFoto(){try{await sb.storage.from('fotos-medicos').remove([me+'/perfil.jpg'])}catch(e){}},
+    // Avance de verificación (sin revisor ni evidencia: eso solo lo ve Health Digital).
+    async misVerificaciones(){const {data,error}=await sb.from('verificaciones_medico').select('paso,resultado,creado').order('creado',{ascending:false});return error?null:data},
+    // Documentos en la carpeta PRIVADA: solo el médico y Health Digital los ven.
+    async misDocumentos(){const {data,error}=await sb.storage.from('documentos-medicos').list(me,{limit:50});return error?null:(data||[]).map(f=>f.name)},
+    async subirDocumento(tipo,file){const ext=(file.name.split('.').pop()||'pdf').toLowerCase().replace(/[^a-z0-9]/g,'');
+      const {error}=await sb.storage.from('documentos-medicos').upload(`${me}/${tipo}-${Date.now()}.${ext}`,file,{contentType:file.type,upsert:false});if(error) throw error},
     async marcarAsistencia(id,v){chk(await sb.rpc('marcar_asistencia',{p_cita:id,p_valor:v}));await refetch('citasdoc')},
     async confirmarAsistencia(id,v){chk(await sb.rpc('confirmar_asistencia',{p_cita:id,p_valor:v}));await refetch('citas')},
     async cancelarPorMedico(id){chk(await sb.rpc('cancelar_por_medico',{p_cita:id}));await refetch('citasdoc');await refetch('ocupados')},
@@ -917,6 +928,17 @@ function SupabaseStore(sb,user){
 }
 
 // Lecturas públicas: solo columnas sin datos del paciente (si la base aún no tiene la actualización 7, usa las de antes).
+// Directorio: primero con insignias (actualización 8); si la base no las tiene, con las columnas de antes.
+async function leerDoctores(sb){
+  const colsBase='id,nombre,especialidad,cedula,universidad,experiencia,zona,direccion,modos,seguros,idiomas,dias,horas,bio,servicios,padecimientos,color,verificado,suspendido,tarjeta_ok,foto_url,web,redes,hospital,consultorio';
+  for(const cols of [colsBase+',esp_verificada,consejo_verificado,consultorio_verificado',colsBase,'id,nombre,especialidad,cedula,universidad,experiencia,zona,direccion,modos,seguros,idiomas,dias,horas,bio,servicios,padecimientos,color,verificado,suspendido,tarjeta_ok']){
+    const r=await sb.from('doctores').select(cols);
+    if(!r.error) return r.data;
+    if(['42P01','PGRST205'].includes(r.error.code)) return [];
+    if(!['42703','PGRST204'].includes(r.error.code)) throw r.error;
+  }
+  return [];
+}
 async function leerOcupados(sb){
   let r=await sb.from('ocupados').select('id,doctor_id,fecha,hora,modalidad,tipo,inicio,fin').gte('fecha',hoy());
   if(r.error&&['42703','PGRST204'].includes(r.error.code)) r=await sb.from('ocupados').select('id,doctor_id,fecha,hora,modalidad,tipo').gte('fecha',hoy());
@@ -933,9 +955,7 @@ function GuestStore(sb){
   const fetchers={
     ocupados:async()=>(await leerOcupados(sb)).map(toCamel),
     resenas:async()=>(await leerResenas(sb)).map(toCamel),
-    doctores:async()=>{let r=await sb.from('doctores').select('id,nombre,especialidad,cedula,universidad,experiencia,zona,direccion,modos,seguros,idiomas,dias,horas,bio,servicios,padecimientos,color,verificado,suspendido,tarjeta_ok,foto_url,web,redes,hospital,consultorio');
-      if(r.error&&r.error.code==='42703') r=await sb.from('doctores').select('id,nombre,especialidad,cedula,universidad,experiencia,zona,direccion,modos,seguros,idiomas,dias,horas,bio,servicios,padecimientos,color,verificado,suspendido,tarjeta_ok');
-      if(r.error){if(['42P01','PGRST205'].includes(r.error.code))return [];throw r.error}return r.data.map(toCamel)}
+    doctores:async()=>(await leerDoctores(sb)).map(toCamel)
   };
   const refetch=async k=>{try{const v=await fetchers[k]();L[k].forEach(f=>f(v))}catch(e){L[k].forEach(f=>f([]))}};
   const ch=sb.channel('hd-invitado').on('postgres_changes',{event:'*',schema:'public',table:'senales'},p=>{const t=p.new&&p.new.tabla;if(t==='ocupados'||t==='resenas')refetch(t);else if(t==='doctores')refetch('doctores')})
@@ -1035,7 +1055,7 @@ function start(store){
   if(S.rol==='medico'){
     S.tab='agenda'; S.citasDoc=[]; S.miDoc=undefined;
     let pend=3; const fin=()=>{if(--pend===0){S.ready=true;render()}}; const f={m:true,o:true,r:true};
-    store.onMiDoc(d=>{const nuevo=!S.miDoc&&d;S.miDoc=d;if(nuevo)store.refresh('citasdoc');if(f.m){f.m=false;fin()}else render(true)});
+    store.onMiDoc(d=>{const nuevo=!S.miDoc&&d;if(S.miDoc&&d&&(S.miDoc.verificado!==d.verificado||S.miDoc.verificacionNota!==d.verificacionNota))S.verif=undefined;S.miDoc=d;if(nuevo)store.refresh('citasdoc');if(f.m){f.m=false;fin()}else render(true)});
     store.onOcupados(list=>{fijaOcupados(list);if(f.o){f.o=false;fin()}else{render(true);refreshSheetSlots()}});
     store.onResenas(r=>{S.resenas=r;if(f.r){f.r=false;fin()}else{render(true);refreshSheetSlots()}});
     store.onCitasDoc(c=>{S.citasDoc=c;if(S.ready)render(true)});
@@ -1204,6 +1224,7 @@ function docCard(d){
     <div class="doc-foot">${libres.length?`<span class="small muted">Próximos horarios</span><div class="quick">${libres.map(x=>`<button class="qslot num" data-act="rapido" data-v="${d.id}|${x.fecha}|${x.hora}"><small>${esc(relDia(x.fecha))}</small>${x.hora}</button>`).join('')}<button class="qslot more" data-act="doctor" data-v="${d.id}">Más<small>horarios</small></button></div>`:'<span class="small muted">Sin horarios en las próximas 2 semanas</span>'}</div>
   </article>`;
 }
+function insigniasHTML(d){return (d.espOk?`<span class="tag blue">${I.verified} Especialidad verificada</span>`:'')+(d.consejoOk?`<span class="tag blue">${I.shield} Certificado por su consejo</span>`:'')+(d.consultorioOk?`<span class="tag blue">${I.pin} Consultorio verificado</span>`:'')}
 function docCalHTML(d){
   const dias=proximosDias(14).map(f=>({f,h:libresDe(d,f)})).filter(x=>x.h.length).slice(0,3);
   if(!dias.length) return `<div class="doc-cal"><p class="small muted">Sin horarios en las próximas 2 semanas</p><button class="btn btn-soft btn-sm" data-act="doctor" data-v="${d.id}">Ver perfil</button></div>`;
@@ -1737,13 +1758,43 @@ function viewDocOnboarding(){
     <button class="btn btn-ghost btn-block" data-act="logout">Cerrar sesión</button>
   </section>`;
 }
+const DOCS_OPC=[
+  {tipo:'especialidad',flag:'espVerificada',t:'Cédula de especialidad',d:'Muestra la insignia "Especialidad verificada".'},
+  {tipo:'consejo',flag:'consejoVerificado',t:'Certificado de tu consejo',d:'Muestra "Certificado por su consejo" (por ejemplo, de CONACEM).'},
+  {tipo:'consultorio',flag:'consultorioVerificado',t:'Foto o comprobante del consultorio',d:'Muestra "Consultorio verificado".'}];
+function cargarVerif(){if(S._verifCargando||!ST.misVerificaciones) return; S._verifCargando=true;
+  Promise.all([ST.misVerificaciones(),ST.misDocumentos()]).then(([v,docs])=>{S.verif=v;S.misDocs=docs;S._verifCargando=false;render(true)}).catch(()=>{S._verifCargando=false})}
+function estadoPaso(paso){const v=(S.verif||[]).find(x=>x.paso===paso); return v?v.resultado:'pendiente'}
+function filaPaso(ok,titulo,texto,extra){
+  const tag=ok==='aprobado'?`<span class="tag ok">${I.check} Listo</span>`:ok==='rechazado'?'<span class="tag" style="background:var(--danger-soft,#FDE8E8);color:var(--danger)">Revisar</span>':'<span class="tag warn">Pendiente</span>';
+  return `<div class="verif-paso"><div class="row between" style="gap:10px;align-items:flex-start"><b class="small">${titulo}</b>${tag}</div>${ok==='aprobado'?'':`<p class="small muted">${texto}</p>`}${extra||''}</div>`}
+function opcionalesHTML(d){
+  if(!ST.subirDocumento||!Array.isArray(S.misDocs)) return '';   // sin la actualización 8 no hay carpeta privada
+  const docs=S.misDocs||[];
+  return `<div class="card elev stack"><div><h3>Suma confianza <span class="muted small">(opcional)</span></h3><p class="small muted">Sube un documento y lo revisamos. Se guarda en una carpeta privada: solo tú y Health Digital lo ven, nunca se publica.</p></div>
+    ${DOCS_OPC.map(o=>{const activo=d[o.flag]; const enviado=docs.some(n=>n.startsWith(o.tipo+'-'));
+      return `<div class="verif-paso"><div class="row between" style="gap:10px;align-items:flex-start"><b class="small">${o.t}</b>${activo?`<span class="tag ok">${I.verified} Insignia activa</span>`:enviado?'<span class="tag blue">Enviado · en revisión</span>':''}</div>
+      <p class="small muted">${o.d}</p>${activo?'':`<label class="btn btn-soft btn-sm" style="align-self:flex-start;cursor:pointer" for="doc-${o.tipo}">${I.doc} ${enviado?'Subir otro':'Subir documento'}</label><input type="file" id="doc-${o.tipo}" data-doc="${o.tipo}" accept="application/pdf,image/jpeg,image/png,image/webp" class="sr-only">`}</div>`}).join('')}
+    <p class="small muted">PDF o imagen, máximo 5 MB.</p></div>`}
 function bannerDoc(){const d=S.miDoc;
   if(d.suspendido) return `<div class="confirm-box"><p class="small"><b>Tu perfil está pausado.</b> No pudimos cobrar la comisión del mes. Actualiza tu tarjeta para volver a aparecer en el directorio.</p><button class="btn btn-danger btn-sm" data-act="docTarjeta">Actualizar tarjeta</button></div>`;
-  const pasos=[];
-  if(!d.verificado) pasos.push(`<div class="row" style="gap:10px;align-items:flex-start"><span class="tag warn">Pendiente</span><span class="small">Estamos verificando tu cédula profesional <b class="num">${esc(d.cedula)}</b>. Suele tardar 1 a 2 días hábiles.</span></div>`);
-  if(!d.tarjetaOk) pasos.push(`<div class="stack" style="gap:8px"><div class="row" style="gap:10px;align-items:flex-start"><span class="tag warn">Pendiente</span><span class="small">Registra la tarjeta donde se cobrará tu comisión mensual. Hoy no se cobra nada.</span></div><button class="btn btn-primary btn-sm" data-act="docTarjeta">${I.card} Registrar tarjeta</button></div>`);
-  if(!pasos.length) return `<div class="note" style="background:var(--brand-soft)">${I.check.replace('<svg','<svg style="color:var(--brand)"')}<span><b>Tu perfil está visible</b> en el directorio y los pacientes ya pueden agendar contigo.</span></div>`;
-  return `<div class="card elev stack"><h3>Para aparecer en el directorio</h3>${pasos.join('')}</div>`;
+  if(ST.misVerificaciones&&S.verif===undefined) cargarVerif();
+  const listo=d.verificado&&d.tarjetaOk;
+  if(listo) return `<div class="note" style="background:var(--brand-soft)">${I.check.replace('<svg','<svg style="color:var(--brand)"')}<span><b>Tu perfil está visible</b> en el directorio y los pacientes ya pueden agendar contigo.</span></div>${opcionalesHTML(d)}`;
+  const conPasos=!!ST.misVerificaciones&&Array.isArray(S.verif);
+  const ced=conPasos?estadoPaso('cedula_sep'):(d.verificado?'aprobado':'pendiente');
+  const ide=conPasos?estadoPaso('identidad'):(d.verificado?'aprobado':'pendiente');
+  const tel=d.telefono?` al <b class="num">${esc(d.telefono)}</b>`:'';
+  const hechos=1+(ced==='aprobado')+(ide==='aprobado')+(d.tarjetaOk?1:0);
+  return `<div class="card elev stack">
+    <div><h3>Tu perfil está listo · falta poco para publicarlo</h3><p class="small muted">Normalmente terminamos en menos de 24 horas hábiles. Mientras, puedes ajustar tu agenda, servicios y precios.</p></div>
+    <div class="verif-barra" role="progressbar" aria-valuemin="0" aria-valuemax="4" aria-valuenow="${hechos}" aria-label="Avance para publicar tu perfil"><span style="width:${hechos*25}%"></span></div>
+    ${d.verificacionNota?`<div class="note">${I.info}<span>${esc(d.verificacionNota)}</span></div>`:''}
+    ${filaPaso('aprobado','1. Perfil completo','')}
+    ${filaPaso(ced,'2. Cédula profesional',`La revisamos en el Registro Nacional de Profesionistas de la SEP con tu número <b class="num">${esc(d.cedula)}</b>. No tienes que subir nada.`)}
+    ${filaPaso(ide,'3. Llamada de bienvenida · 5 min',`Te contactamos${tel} o por correo para una videollamada corta: confirmamos tu identidad con tu INE y te ayudamos con horarios y precios.`)}
+    ${filaPaso(d.tarjetaOk?'aprobado':'pendiente','4. Tarjeta para tu comisión','Solo se cobra el 10% de las consultas atendidas, una vez al mes. Hoy no se cobra nada.',d.tarjetaOk?'':`<button class="btn btn-primary btn-sm" style="align-self:flex-start" data-act="docTarjeta">${I.card} Registrar tarjeta</button>`)}
+  </div>${opcionalesHTML(d)}`;
 }
 function citaDocCard(c,modo){
   const dt=parseYmd(c.fecha); const [k,lbl,cls]=estadoCom(c);
@@ -1806,7 +1857,7 @@ function viewDocPagos(){
 }
 function viewDocPerfil(){
   const d=S.miDoc;
-  return `<section class="row" style="gap:14px">${avatar(mapDoc(d),'lg')}<div style="min-width:0"><h1>${esc(d.nombre)}</h1><p class="muted small">${esc(d.especialidad)} · Cédula ${esc(d.cedula)}</p>${d.verificado?`<span class="tag blue">${I.verified} Cédula verificada</span>`:'<span class="tag warn">En verificación</span>'}</div></section>
+  return `<section class="row" style="gap:14px">${avatar(mapDoc(d),'lg')}<div style="min-width:0"><h1>${esc(d.nombre)}</h1><p class="muted small">${esc(d.especialidad)} · Cédula ${esc(d.cedula)}</p><div class="row wrap" style="gap:6px">${d.verificado?`<span class="tag blue">${I.verified} Cédula verificada</span>`:'<span class="tag warn">En verificación</span>'}${insigniasHTML(mapDoc(d))}</div></div></section>
   <button class="btn btn-ghost btn-block" data-act="docVista">Ver mi perfil como paciente</button>
   ${docFormHTML(d,false)}
   <button class="btn btn-ghost btn-block" data-act="logout">Cerrar sesión</button>`;
@@ -1888,7 +1939,7 @@ function sheetDoctor(s){
   return sheetFrame(s.reprogramar?'Elige un nuevo horario':'Perfil del profesional',`<div class="pf"><div class="pf-a">
     <section class="row" style="gap:14px;align-items:flex-start">${avatar(d,'lg')}<div class="stack" style="gap:4px;min-width:0">
       <div class="row" style="gap:8px;align-items:flex-start"><h2 style="flex:1">${esc(d.nombre)}</h2><button class="fav-btn static" data-act="fav" data-v="${d.id}" aria-pressed="${(S.perfil.favoritos||[]).includes(d.id)}" aria-label="Guardar en favoritos">${heart((S.perfil.favoritos||[]).includes(d.id))}</button></div><p class="muted">${esc(d.esp)}</p>
-      <div class="row wrap" style="gap:6px">${d.db?`<span class="tag blue">${I.verified} Cédula verificada</span>`:'<span class="tag warn">Perfil de ejemplo · datos ficticios</span>'}${c?`<span class="tag"><span class="stars">★ ${c.prom.toFixed(1)}</span>&nbsp;${c.n} ${c.n===1?'opinión':'opiniones'}</span>`:'<span class="tag">Sin opiniones aún</span>'}</div>
+      <div class="row wrap" style="gap:6px">${d.db?`<span class="tag blue">${I.verified} Cédula verificada</span>${insigniasHTML(d)}`:'<span class="tag warn">Perfil de ejemplo · datos ficticios</span>'}${c?`<span class="tag"><span class="stars">★ ${c.prom.toFixed(1)}</span>&nbsp;${c.n} ${c.n===1?'opinión':'opiniones'}</span>`:'<span class="tag">Sin opiniones aún</span>'}</div>
     </div></section>
     <div class="card elev"><dl class="kv">
       <dt>Cédula profesional</dt><dd class="num">${esc(d.cedula)}</dd><dt>Formación</dt><dd>${esc(d.uni)}</dd><dt>Experiencia</dt><dd>${d.exp?d.exp+' años':'—'}</dd><dt>Idiomas</dt><dd>${esc(d.idiomas.join(', '))}</dd>
@@ -2170,6 +2221,10 @@ document.addEventListener('change',e=>{
   if(id==='f-orden'){S.f.orden=e.target.value;$('#results').innerHTML=resultsHTML()}
   if(id==='b-pac'&&S.sheet) S.sheet.paciente=e.target.value;
   if(e.target.name==='metodo'&&S.sheet){S.sheet.metodo=e.target.value;const p=document.querySelector('.sheet-foot .price');if(p)p.textContent=e.target.value==='membresia'?'$0':money(servDe(docById(S.sheet.id),S.sheet.serv).p)}
+  if(e.target.dataset&&e.target.dataset.doc){const f=e.target.files&&e.target.files[0]; const tipo=e.target.dataset.doc; e.target.value=''; if(!f) return;
+    if(f.size>5*1024*1024){toast('El archivo pesa más de 5 MB.');return}
+    if(!/^(application\/pdf|image\/(jpeg|png|webp))$/.test(f.type)){toast('Sube un PDF o una imagen JPG, PNG o WEBP.');return}
+    toast('Subiendo…'); ST.subirDocumento(tipo,f).then(()=>{toast('Documento enviado. Lo revisamos y te avisamos.');S.verif=undefined;cargarVerif()}).catch(()=>toast('No se pudo subir. Inténtalo de nuevo.'))}
   if(id==='d-foto'){const f=e.target.files&&e.target.files[0]; if(!f) return; prepararFoto(f).then(r=>{S.foto=r;const pv=$('#fotoPrev');if(pv){pv.querySelector('img')?.remove();const im=document.createElement('img');im.src=r.preview;im.alt='Tu foto de perfil';pv.appendChild(im)}toast('Foto lista. Se guardará al guardar tu perfil.')}).catch(er=>toast(er.message)); e.target.value=''}
   if(e.target.name==='rol'){document.querySelectorAll('.rol').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));if(S.auth)S.auth.rol=e.target.value}
   if(e.target.name==='serv'&&S.sheet){S.sheet.serv=e.target.value;document.querySelectorAll('.serv').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));const pp=$('#docPrice');if(pp)pp.textContent=money(servDe(docById(S.sheet.id),S.sheet.serv).p)}

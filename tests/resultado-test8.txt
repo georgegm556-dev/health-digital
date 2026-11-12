@@ -1,0 +1,36 @@
+--- 1 médico nuevo: sin verificar, sin insignias
+f|f|f
+por verificar:|1
+--- 2 solo cédula aprobada -> sigue sin verificar (falta identidad)
+f
+--- 3 identidad aprobada -> verificado
+t
+--- 4 especialidad y consejo -> insignias
+t|f
+t|t
+--- 5 datos inválidos rechazados
+ERROR:  No hay un médico con la cédula 99999999
+ERROR:  new row for relation "verificaciones_medico" violates check constraint "verificaciones_medico_paso_check"
+  values (d.id, p_paso, p_resultado, p_revisor, p_evidencia)"
+ERROR:  new row for relation "verificaciones_medico" violates check constraint "verificaciones_medico_revisor_check"
+  values (d.id, p_paso, p_resultado, p_revisor, p_evidencia)"
+--- 6 el médico no puede encenderse insignias ni ver revisor/evidencia; ve su avance
+55555555-5555-5555-5555-555555555555
+ERROR:  permission denied for table doctores
+ERROR:  permission denied for table doctores
+ERROR:  permission denied for table verificaciones_medico
+avance visible:|4
+ERROR:  permission denied for function registrar_verificacion
+nota vía mi_doctor:|(sin nota)
+--- 7 cambiar especialidad apaga verificación e insignias de especialidad
+f|f|f|Cambiaste tu especialidad: la volvemos a revisar.
+--- 8 público: ve insignias, no la nota ni verificaciones
+anon insignias:|2
+ERROR:  permission denied for table doctores
+ERROR:  permission denied for table verificaciones_medico
+--- 9 otro médico no ve las revisiones de este
+33333333-3333-3333-3333-333333333333
+dr-uno ve revisiones de dr-tres:|0
+--- 10 rechazo deja nota para el médico
+f
+El nombre de tu cédula no coincide con tu perfil. Escríbenos.
