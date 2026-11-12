@@ -1,0 +1,34 @@
+--- 1 tomar dos veces: la segunda no lo toma
+true
+en_proceso
+--- 2 congelar con una consulta en revisión -> no se cobra
+en_revision|1 consulta(s) en revisión: se cobra al resolverlas
+--- 3 se resuelve a favor del médico; congelar -> 70 de comisión
+pendiente|140.00|140.00|t
+congelar otra vez no duplica:|1
+movimientos:|comision=140.00
+citas liquidadas:|3
+--- 4 paciente no puede cancelar/cambiar una cita liquidada (aunque fuera futura)
+--- 5 pagado dos veces = un movimiento de pago; un fallido después no lo despaga
+pagado
+pagado
+pagado
+pagos registrados:|1
+--- 6 saldo menor al mínimo se arrastra al siguiente periodo
+a procesar incluye saldo:|1
+nuevo periodo con saldo:|5.00|5.00
+el saldo no se vuelve a usar:|1
+--- 7 dos rechazos seguidos pausan el perfil; un pago lo reactiva
+fallido|1
+suspendido tras 1:|f
+fallido|2
+suspendido tras 2:|t
+pagado
+suspendido tras pago:|f
+--- 8 bandeja de Stripe: el mismo evento solo se procesa una vez
+tomado
+procesado
+--- 9 el médico ve sus movimientos; otro usuario no; nadie llama funciones de cobro
+médico ve movimientos:|4
+ERROR:  permission denied for function tomar_cobro
+otro ve movimientos:|0

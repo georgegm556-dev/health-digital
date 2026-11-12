@@ -1,0 +1,65 @@
+--- 1 Ana reserva Consulta 09:00 (ok, precio 700 del servidor, cubierta=false con bandera apagada)
+700|f|30|Consulta
+--- 2 mismo idem_key (doble clic) devuelve la misma cita, no crea otra
+1
+citas de Ana:|1
+--- 3 Beto mismo horario -> horario_ocupado
+ERROR:  horario_ocupado
+--- 4 solapamiento: Ana servicio de 50 min a las 09:00 del día+8; Beto 09:30 ese día -> horario_ocupado
+00:50:00
+ERROR:  horario_ocupado
+Beto 10:00 (ok):|10:00
+--- 5 escritura directa bloqueada (insert, update de precio, delete)
+ERROR:  permission denied for table citas
+ERROR:  permission denied for table citas
+ERROR:  permission denied for table citas
+ERROR:  permission denied for table ocupados
+--- 6 validaciones: médico inexistente, no verificado, servicio ajeno, fuera de agenda, pasado, modalidad, paciente ajeno
+ERROR:  medico_no_disponible
+ERROR:  medico_no_disponible
+ERROR:  servicio_invalido
+ERROR:  fuera_de_agenda
+ERROR:  fuera_de_agenda
+ERROR:  modalidad_invalida
+ERROR:  paciente_invalido
+--- 7 membresía con bandera apagada -> sin_cobertura
+ERROR:  sin_cobertura
+    bandera encendida: primera cubierta ok, segunda rechazada (cupo 1), servicio no elegible rechazado
+t|700
+ERROR:  sin_cobertura
+ERROR:  sin_cobertura
+--- 8 privacidad: anónimo no lee user_id/cita_id; sí lo público
+ERROR:  permission denied for table ocupados
+ERROR:  permission denied for table ocupados
+ERROR:  permission denied for table resenas
+ERROR:  permission denied for table doctores
+anon ocupados públicos:|4
+anon reseñas públicas:|0
+anon citas visibles:|0
+--- 9 Beto no ve ni toca citas de Ana
+Beto ve citas ajenas:|0
+ERROR:  cita_no_encontrada
+ERROR:  cita_no_encontrada
+ERROR:  cita_no_encontrada
+--- 10 reprogramar a horario ocupado falla y conserva la cita anterior
+ERROR:  horario_ocupado
+cita sigue igual:|t|09:00|1
+reprograma a libre:|10:30
+slot viejo liberado:|0
+--- 11 cancelar: futura ok; pasada no (sin cancelación retroactiva)
+cancelada|paciente
+slot liberado:|0
+ERROR:  cita_cerrada
+--- 12 opiniones: sin evidencia de asistencia -> rechazada; con confirmación del paciente -> ok
+ERROR:  new row violates row-level security policy for table "resenas"
+mis_resenas:|1
+--- 13 médico: bloquear (ok), paciente no puede; editar perfil ok; cambiar especialidad -> vuelve a revisión
+ERROR:  no_medico
+bloqueo médico:|
+verificado tras editar bio:|t
+verificado tras cambiar especialidad:|f|Cardiología
+admin re-verifica (sin auth.uid):|t
+--- 14 borrar mis datos (Beto): futuras canceladas, perfil fuera, citas conservadas y anonimizadas
+Beto citas:|cancelada|Paciente
+Beto perfil:|0
+Beto ocupados:|0

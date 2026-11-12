@@ -27,8 +27,11 @@ const PRECIOS: Record<string, string | undefined> = {
 };
 const SITE = Deno.env.get("SITE_URL") ?? "";
 
+// Solo la app publicada puede llamar desde el navegador (CORS no es autorización: la sesión se verifica abajo).
+const ORIGEN = (() => { try { return new URL(SITE).origin; } catch { return "*"; } })();
 const cors = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": ORIGEN,
+  "Vary": "Origin",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
@@ -62,7 +65,8 @@ Deno.serve(async (req) => {
           metadata: { tipo: "medico", doctor_id: doc.id, user_id: user.id },
         });
         customer = c.id;
-        await admin.from("doctores").update({ stripe_customer_id: customer }).eq("id", doc.id);
+        const { error: eUpd } = await admin.from("doctores").update({ stripe_customer_id: customer }).eq("id", doc.id);
+        if (eUpd) throw eUpd;
       }
       const session = await stripe.checkout.sessions.create({
         mode: "setup",
@@ -89,13 +93,27 @@ Deno.serve(async (req) => {
     .maybeSingle();
   if (!perfil) return json({ error: "Completa tu perfil antes de activar una membresía." }, 400);
 
+  // Las membresías solo se venden cuando Health Digital enciende la bandera (convenios y tarifas listos).
+  const ventaActiva = async () => {
+    const { data, error } = await admin.rpc("bandera", { p_clave: "venta_membresias" });
+    return !error && data === true;
+  };
+
   try {
     // 2. Pagar una membresía nueva: página de pago segura de Stripe.
     if (accion === "checkout") {
+      if (!(await ventaActiva())) return json({ error: "Las membresías aún no están disponibles." }, 403);
       const price = PRECIOS[body.plan ?? ""];
       if (!price) return json({ error: "Plan no válido." }, 400);
       const activa = perfil.stripe_subscription_id && ["active", "trialing", "past_due"].includes(perfil.plan_estado ?? "");
       if (activa) return json({ error: "Ya tienes una membresía activa. Usa Cambiar de plan." }, 409);
+      // También se revisa en Stripe por si el aviso del pago anterior aún no llega.
+      if (perfil.stripe_customer_id) {
+        const subs = await stripe.subscriptions.list({ customer: perfil.stripe_customer_id, status: "all", limit: 10 });
+        if (subs.data.some((x) => ["active", "trialing", "past_due", "incomplete"].includes(x.status))) {
+          return json({ error: "Ya tienes una membresía en proceso o activa." }, 409);
+        }
+      }
 
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
@@ -108,12 +126,13 @@ Deno.serve(async (req) => {
         allow_promotion_codes: true,
         success_url: `${SITE}?pago=ok`,
         cancel_url: `${SITE}?pago=cancelado`,
-      });
+      }, { idempotencyKey: `checkout-${user.id}-${body.plan}-${Math.floor(Date.now() / 600000)}` }); // doble clic = misma página
       return json({ url: session.url });
     }
 
     // 3. Cambiar de plan con prorrateo (se cobra o acredita la diferencia).
     if (accion === "cambiar") {
+      if (!(await ventaActiva())) return json({ error: "Las membresías aún no están disponibles." }, 403);
       const price = PRECIOS[body.plan ?? ""];
       if (!price) return json({ error: "Plan no válido." }, 400);
       if (!perfil.stripe_subscription_id) return json({ error: "No tienes una membresía activa." }, 400);
@@ -138,14 +157,22 @@ Deno.serve(async (req) => {
     }
 
     // 5. Cancelar de inmediato (se usa al eliminar la cuenta, para no seguir cobrando).
+    // No se informa "cancelada" hasta que Stripe lo confirma.
     if (accion === "cancelar") {
       if (perfil.stripe_subscription_id) {
-        try { await stripe.subscriptions.cancel(perfil.stripe_subscription_id); } catch { /* ya cancelada */ }
+        let sub = await stripe.subscriptions.retrieve(perfil.stripe_subscription_id);
+        if (!["canceled", "incomplete_expired"].includes(sub.status)) {
+          sub = await stripe.subscriptions.cancel(sub.id, {}, { idempotencyKey: `cancelar-${sub.id}` });
+        }
+        if (!["canceled", "incomplete_expired"].includes(sub.status)) {
+          return json({ error: "Stripe aún no confirma la cancelación. Inténtalo en unos minutos.", estado: sub.status }, 502);
+        }
       }
-      await admin.from("perfiles")
+      const { error: eCan } = await admin.from("perfiles")
         .update({ plan: null, plan_estado: "canceled", miembros: [] })
         .eq("id", user.id);
-      return json({ ok: true });
+      if (eCan) throw eCan;
+      return json({ ok: true, cancelada: true });
     }
 
     return json({ error: "Acción no válida." }, 400);
