@@ -104,7 +104,8 @@ main{flex:1;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:m
 
 .field{display:flex;flex-direction:column;gap:6px}
 .field label{font-size:.85rem;font-weight:600}
-.input,select.input,textarea.input{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:11px 12px;min-height:44px}
+.input,select.input,textarea.input{width:100%;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:11px 12px;min-height:44px}
+.input::placeholder{color:var(--muted);opacity:1}
 textarea.input{min-height:84px;resize:vertical}
 .input:focus{outline:2px solid var(--brand);outline-offset:0;border-color:transparent}
 .search{position:relative}
