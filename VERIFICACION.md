@@ -55,7 +55,9 @@ El médico ve ese mensaje en su pantalla.
 2. En la llamada:
    - Pídele que muestre su **INE** a la cámara y compara foto y nombre con la persona y con la cédula. **No guardes foto de la INE**: solo anota que coincidió.
    - Ayúdale a revisar horarios, servicios y precios.
-   - Explícale la comisión: 10% de cada consulta atendida, cobrado una vez al mes, y nada si el paciente no llega o cancela.
+   - Explícale la comisión: 10% + IVA de cada consulta atendida que llegó por la app, cobrado una vez al mes (día 10), y nada si el paciente no llega o cancela.
+   - Muéstrale **su enlace y su QR** (en Mi perfil): los pacientes que reserven con ellos son suyos y no paga comisión.
+   - Si le interesa crecer, menciónale a Health Digital Marketing (aliado opcional, 10% de descuento). Deja claro que no contratarlo no cambia nada en la app.
 3. Regístralo:
 
 ```sql

@@ -1,0 +1,41 @@
+--- 1 Beto llega por el enlace del médico: origen enlace_medico, comisión 0 en reglas
+22222222-2222-2222-2222-222222222222
+enlace_medico|0|no_requerido
+--- 2 Ana ya llegó por la app a dr-uno: aunque use el enlace, sigue como app
+11111111-1111-1111-1111-111111111111
+11111111-1111-1111-1111-111111111111
+app
+--- 3 origen inválido no se acepta como enlace
+app
+--- 4 estado de comisión: paciente propio atendido = paciente_propio (sin comisión)
+APPX|cobrable
+PROPIO|paciente_propio
+--- 5 resumen: comisión 100 + IVA 16 solo por APPX
+1|100.00|16.00
+--- 6 anticipo encendido: cita queda pendiente con $200; vence a los 20 min y libera el horario
+22222222-2222-2222-2222-222222222222
+200|pendiente
+liberadas:|1
+cancelada|sistema|vencido|0
+--- 7 anticipo pagado (webhook) y luego el paciente cancela con más de 24 h: reembolso pendiente
+22222222-2222-2222-2222-222222222222
+pendiente
+22222222-2222-2222-2222-222222222222
+cancelada|reembolso_pendiente
+--- 8 nadie de fuera marca anticipos pagados
+ERROR:  permission denied for function anticipo_pagado
+--- 9 cierre con anticipos pagados: se acreditan al médico
+true
+100.00|16.00|200.00|-84.00
+--- 10 médicos que recomiendo: solo verificados, sin uno mismo, máx 12
+33333333-3333-3333-3333-333333333333
+{}
+público ve recomendados:|1
+--- 11 lista de espera: cada quien solo la suya; el resultado de la prueba no es público
+22222222-2222-2222-2222-222222222222
+1
+11111111-1111-1111-1111-111111111111
+0
+ERROR:  new row violates row-level security policy for table "lista_espera"
+ERROR:  permission denied for function prueba_precio
+A|149|1

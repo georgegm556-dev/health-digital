@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
   if (authErr || !auth?.user) return json({ error: "Inicia sesión para continuar." }, 401);
   const user = auth.user;
 
-  let body: { accion?: string; plan?: string } = {};
+  let body: { accion?: string; plan?: string; cita?: string } = {};
   try { body = await req.json(); } catch { /* cuerpo vacío */ }
   const accion = body.accion ?? "";
 
@@ -83,6 +83,46 @@ Deno.serve(async (req) => {
     } catch (e) {
       console.error("tarjeta_medico", e);
       return json({ error: "No se pudo abrir el registro de tarjeta. Inténtalo de nuevo." }, 500);
+    }
+  }
+
+  // Anticipo de una cita (decisión 19/11/2026). Solo si la bandera anticipo_activo está encendida.
+  // El monto lo fija la base de datos al reservar; aquí nunca se recibe un monto del navegador.
+  if (accion === "anticipo") {
+    try {
+      const { data: activo } = await admin.rpc("bandera", { p_clave: "anticipo_activo" });
+      if (activo !== true) return json({ error: "El anticipo aún no está activo." }, 403);
+      const citaId = String(body.cita ?? "");
+      if (!/^[0-9a-f-]{36}$/.test(citaId)) return json({ error: "Cita no válida." }, 400);
+      const { data: c, error: eC } = await admin.from("citas")
+        .select("id, user_id, doctor_id, fecha, hora, servicio, anticipo, anticipo_estado, folio, estado")
+        .eq("id", citaId).maybeSingle();
+      if (eC) throw eC;
+      if (!c || c.user_id !== user.id) return json({ error: "No encontramos esa cita." }, 404);
+      if (c.estado !== "confirmada" || c.anticipo_estado !== "pendiente" || !(c.anticipo > 0)) {
+        return json({ error: "Esta cita no tiene un anticipo pendiente." }, 409);
+      }
+      const session = await stripe.checkout.sessions.create({
+        mode: "payment",
+        customer_email: user.email ?? undefined,
+        line_items: [{
+          quantity: 1,
+          price_data: {
+            currency: "mxn",
+            unit_amount: c.anticipo * 100,
+            product_data: { name: `Anticipo de consulta · ${c.servicio ?? "Consulta"}`, description: `Cita ${c.fecha} ${c.hora} · folio ${c.folio}` },
+          },
+        }],
+        metadata: { tipo: "anticipo", cita_id: c.id, user_id: user.id },
+        payment_intent_data: { metadata: { tipo: "anticipo", cita_id: c.id } },
+        expires_at: Math.floor(Date.now() / 1000) + 30 * 60,   // Stripe pide mínimo 30 min; la cita se libera a los 20 si no se paga
+        success_url: `${SITE}?anticipo=ok&cita=${c.id}`,
+        cancel_url: `${SITE}?anticipo=cancelado&cita=${c.id}`,
+      }, { idempotencyKey: `anticipo-${c.id}` });
+      return json({ url: session.url });
+    } catch (e) {
+      console.error("anticipo", e);
+      return json({ error: "No se pudo abrir el pago del anticipo. Inténtalo de nuevo." }, 500);
     }
   }
 

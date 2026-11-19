@@ -4,10 +4,10 @@ en_proceso
 --- 2 congelar con una consulta en revisión -> no se cobra
 en_revision|1 consulta(s) en revisión: se cobra al resolverlas
 --- 3 se resuelve a favor del médico; congelar -> 70 de comisión
-pendiente|140.00|140.00|t
+pendiente|70.00|70.00|t
 congelar otra vez no duplica:|1
-movimientos:|comision=140.00
-citas liquidadas:|3
+movimientos:|comision=70.00
+citas liquidadas:|2
 --- 4 paciente no puede cancelar/cambiar una cita liquidada (aunque fuera futura)
 --- 5 pagado dos veces = un movimiento de pago; un fallido después no lo despaga
 pagado

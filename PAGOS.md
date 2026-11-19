@@ -6,7 +6,7 @@
 
 Incluye dos tipos de cobro:
 - **Membresías de pacientes:** $300 y $500 al mes, con cobro automático.
-- **Comisión del 10% a médicos:** el médico registra su tarjeta y cada mes se le cobra el 10% de las consultas que atendió.
+- **Comisión del 10% + IVA a médicos:** el médico registra su tarjeta y cada mes se le cobra el 10% (más IVA) de las consultas que atendió de pacientes que llegaron por la app. Los que reservan con su enlace o QR: 0%.
 
 Primero se hace todo en **modo de prueba**: con tarjetas falsas y sin cobrar dinero real.
 Cuando funcione, se cambia a modo real (Paso 8).
@@ -239,3 +239,38 @@ select net.http_post(
 
 - **Facturas CFDI:** Stripe no las emite. Se puede conectar un servicio como Facturama o Facturapi para generarlas en cada pago.
 - **Aviso de privacidad y términos de la membresía:** revisa con un abogado las condiciones de renovación y cancelación.
+
+
+## Actualización 9 · Enlace del médico, anticipo y prueba de precio
+
+Corre `actualizacion-9-enlace-anticipo.sql` en Supabase (después de la 8). Todo queda **apagado**; nada cambia para nadie hasta que lo enciendas.
+
+### Enlace y QR del médico (0% de comisión)
+- Cada médico ve en **Mi perfil** su enlace (`...?m=su-id`), su QR descargable y un botón para mandarlo por WhatsApp.
+- Si el paciente reserva con ese enlace y **no tenía antes una cita por la app con ese médico**, la cita queda como "Tu paciente · 0%". La base de datos lo valida; el navegador no puede forzarlo.
+
+### Anticipo de $200 (apagado hasta que lo revise el contador)
+1. Revisa con tu contador cómo facturar el anticipo y el reembolso.
+2. Programa la liberación de horarios sin pagar (cada 10 minutos), en **SQL Editor**:
+   ```sql
+   select cron.schedule('liberar-anticipos', '*/10 * * * *', $$select public.liberar_anticipos_vencidos()$$);
+   ```
+3. Publica las funciones `pagos` y `stripe-webhook` nuevas (traen el cobro del anticipo).
+4. Enciende:
+   ```sql
+   update config_plataforma set valor = 'true' where clave = 'anticipo_activo';
+   ```
+- El paciente paga $200 con tarjeta al reservar; tiene 20 minutos o el horario se libera.
+- Se descuenta del precio: en consultorio paga el resto. Al médico se le acredita en su cierre del día 10.
+- Reembolso completo si el paciente cancela con 24 h o más, o si el médico cancela. Las citas en `reembolso_pendiente` se reembolsan desde Stripe (por ahora a mano):
+  ```sql
+  select id, folio, anticipo, stripe_checkout from citas where anticipo_estado = 'reembolso_pendiente';
+  ```
+
+### Prueba de precio del plan Plus ($149 contra $199)
+- Mientras la venta está apagada, la mitad de las personas ve $149 y la otra mitad $199, siempre el mismo en su dispositivo. Pueden tocar **Avísame cuando abra**.
+- Para ver el resultado:
+  ```sql
+  select * from prueba_precio();
+  ```
+- Cuando elijas el precio ganador: crea ese precio en Stripe, ponlo en `PRICE_INDIVIDUAL` y quita la prueba de la app (avísame y lo dejo fijo).
