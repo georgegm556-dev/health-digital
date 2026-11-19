@@ -93,6 +93,14 @@ async function procesar(evento: Stripe.Event) {
         }
         return;
       }
+      if (s.mode === "payment" && s.metadata?.tipo === "anticipo" && s.metadata.cita_id) {
+        // Se confirma contra Stripe que el pago sí quedó pagado (no basta con el evento).
+        const actual = await stripe.checkout.sessions.retrieve(s.id);
+        if (actual.payment_status !== "paid") return;
+        const { error } = await admin.rpc("anticipo_pagado", { p_cita: s.metadata.cita_id, p_checkout: s.id });
+        if (error) throw new Error(`anticipo_pagado: ${error.message}`);
+        return;
+      }
       if (s.mode === "subscription" && s.subscription) await sincronizar(String(s.subscription), s.client_reference_id);
       return;
     }

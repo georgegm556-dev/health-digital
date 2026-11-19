@@ -1,6 +1,6 @@
 (function(){
 const K='mockdb';const T0=JSON.parse(sessionStorage.getItem(K)||'null')||{perfiles:[],citas:[],ocupados:[],resenas:[],doctores:[],cobros_medicos:[],config_plataforma:[{clave:'cobertura_membresia',valor:false},{clave:'venta_membresias',valor:false}],senales:[]};
-const T=Object.assign({config_plataforma:[{clave:'cobertura_membresia',valor:false},{clave:'venta_membresias',valor:false}],senales:[]},T0);
+const T=Object.assign({config_plataforma:[{clave:'cobertura_membresia',valor:false},{clave:'venta_membresias',valor:false}],senales:[],verificaciones_medico:[]},T0);
 const save=()=>sessionStorage.setItem(K,JSON.stringify(T));
 let sess=JSON.parse(sessionStorage.getItem('sess')||'null');const subs=[];
 const uidOf=e=>'u-'+e.replace(/[^a-z]/g,'');
@@ -52,6 +52,6 @@ window.supabase={createClient(){return{
   async signOut(){sess=null;sessionStorage.removeItem('sess');subs.forEach(f=>f('SIGNED_OUT',null));return{error:null}}},
  rpc:async(n,a)=>{if(!rpcs[n])return{data:null,error:{code:'PGRST202',message:'not found'}};try{const r=rpcs[n](a||{});save();return{data:r,error:null}}catch(e){return{data:null,error:{code:'P0001',message:e.message||String(e)}}}},
  functions:{async invoke(n,{body}){(window.__inv=window.__inv||[]).push(body);return{data:{ok:true}}}},
- storage:{from(b){return{async upload(path,blob){const r=new FileReader();const u=await new Promise(ok=>{r.onload=()=>ok(r.result);r.readAsDataURL(blob)});sessionStorage.setItem('foto:'+path,u);return{error:null}},getPublicUrl(path){return{data:{publicUrl:'https://example.supabase.co/storage/v1/object/public/fotos-medicos/'+path}}},async remove(){return{}}}}},
+ storage:{from(b){return{async upload(path,blob){if(b==='documentos-medicos'){(T.docs=T.docs||[]).push({bucket:b,path,type:blob.type});save();return{error:null}}const r=new FileReader();const u=await new Promise(ok=>{r.onload=()=>ok(r.result);r.readAsDataURL(blob)});sessionStorage.setItem('foto:'+path,u);return{error:null}},async list(folder){if(b!=='documentos-medicos')return{data:[],error:null};return{data:(T.docs||[]).filter(x=>x.path.startsWith(folder+'/')).map(x=>({name:x.path.slice(folder.length+1)})),error:null}},getPublicUrl(path){return{data:{publicUrl:'https://example.supabase.co/storage/v1/object/public/fotos-medicos/'+path}}},async remove(){return{}}}}},
  from:t=>Q(t),channel(){const c={on(){return c},subscribe(){return c}};return c},removeChannel(){}}}};
 window.__T=T;window.__save=save;})();
