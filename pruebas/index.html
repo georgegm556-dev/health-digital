@@ -585,6 +585,26 @@ nav button[aria-current="page"] .nav-ic svg{animation:pop .35s var(--ease-pop)}
   .btn:active,.chip:active,.fpill:active,.day:active,.slot:active,.quick-acts button:active{transform:none}
   #results .doc:hover,.plan:hover,.quick-acts button:hover,.recom-list button:hover{transform:none}
 }
+/* ===== Firma visual: título que rota, disponible hoy, especialidades con ícono ===== */
+.hero h1 .rota{display:block;width:max-content;max-width:100%;color:#fff;background:linear-gradient(transparent 64%,rgba(255,213,107,.5) 64%,rgba(255,213,107,.5) 92%,transparent 92%);padding-inline:2px;transition:opacity .26s ease,transform .26s ease}
+.hero h1 .rota.sale{opacity:0;transform:translateY(-10px)}
+.hero h1 .rota.entra{animation:aparece .42s var(--ease-out) both}
+.tag.hoy{background:color-mix(in srgb,#22B566 15%,var(--surface));color:color-mix(in srgb,#22B566 70%,var(--ink));gap:6px}
+.pulso{width:8px;height:8px;border-radius:50%;background:#22B566;position:relative;flex:none}
+.pulso::after{content:"";position:absolute;inset:0;border-radius:50%;background:#22B566;animation:late 1.6s ease-out infinite}
+@keyframes late{from{transform:scale(1);opacity:.7}to{transform:scale(2.8);opacity:0}}
+.chips.esp-row{gap:4px;padding-block:4px}
+.chip.esp-chip{display:flex;flex-direction:column;align-items:center;gap:6px;width:76px;padding:2px 0;border:0;background:none;border-radius:16px;white-space:normal;font-size:.76rem;line-height:1.2;text-align:center;color:var(--ink)}
+.esp-ic{display:grid;place-items:center;width:54px;height:54px;border-radius:50%;background:color-mix(in srgb,var(--c) 14%,var(--surface));color:var(--c);transition:background-color .2s ease,color .2s ease,transform .2s var(--ease-pop),box-shadow .2s ease}
+.esp-ic svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.chip.esp-chip[aria-pressed="true"]{background:none;color:var(--ink);font-weight:700}
+.chip.esp-chip[aria-pressed="true"] .esp-ic{background:var(--c);color:#fff;box-shadow:0 6px 16px color-mix(in srgb,var(--c) 35%,transparent);transform:scale(1.06)}
+.chip.esp-chip:active{transform:none}.chip.esp-chip:active .esp-ic{transform:scale(.92)}
+@media (hover:hover) and (pointer:fine){.chip.esp-chip:hover .esp-ic{transform:translateY(-2px)}}
+.chips.esp-row{flex-wrap:nowrap;overflow-x:auto}
+@media (min-width:1100px) and (hover:hover) and (pointer:fine){.filtros-lado .chips.esp-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 4px;overflow:visible}
+.filtros-lado .chip.esp-chip{width:auto}}
+@media (prefers-reduced-motion:reduce){.pulso::after,.hero h1 .rota.entra{animation:none}.hero h1 .rota{transition:none}}
 </style>
 
 <div class="app">
@@ -1357,7 +1377,7 @@ function docCard(d){
         <span class="doc-meta">${c?`<span><span class="stars">★ ${c.prom.toFixed(1)}</span> (${c.n})</span>`:''}<span>${esc(d.zona)}${d.km?` · ${d.km} km`:''}</span><span class="price num">desde ${money(Math.min(...d.servicios.map(x=>x.p)))}</span></span>
       </div>
     </div>
-    <div class="row wrap" style="gap:6px">${!d.db?'<span class="tag warn">Perfil de ejemplo</span>':''}${d.modos.includes('Videoconsulta')?`<span class="tag blue">${I.video} Videoconsulta</span>`:''}${d.seguros.slice(0,3).map(s=>`<span class="tag">${esc(s)}</span>`).join('')}</div>
+    <div class="row wrap" style="gap:6px">${libres.length&&libres[0].fecha===hoy()?'<span class="tag hoy"><i class="pulso" aria-hidden="true"></i>Disponible hoy</span>':''}${!d.db?'<span class="tag warn">Perfil de ejemplo</span>':''}${d.modos.includes('Videoconsulta')?`<span class="tag blue">${I.video} Videoconsulta</span>`:''}${d.seguros.slice(0,3).map(s=>`<span class="tag">${esc(s)}</span>`).join('')}</div>
     </button>
     ${docCalHTML(d)}
     <div class="doc-foot">${libres.length?`<span class="small muted">Próximos horarios</span><div class="quick">${libres.map(x=>`<button class="qslot num" data-act="rapido" data-v="${d.id}|${x.fecha}|${x.hora}"><small>${esc(relDia(x.fecha))}</small>${x.hora}</button>`).join('')}<button class="qslot more" data-act="doctor" data-v="${d.id}">Más<small>horarios</small></button></div>`:'<span class="small muted">Sin horarios en las próximas 2 semanas</span>'}</div>
@@ -1375,10 +1395,37 @@ function resultsHTML(){
   if(!r.length) return pre+`<div class="card empty">${I.search}<h3>No encontramos profesionales con esos filtros</h3><p class="muted small">${S.f.fav&&!(S.perfil.favoritos||[]).length?'Aún no guardas favoritos. Toca el corazón en la tarjeta de un médico.':'Prueba con otra especialidad, otro día o quita algún filtro.'}</p><button class="btn btn-soft btn-sm" data-act="limpiar">Quitar filtros</button></div>`;
   return pre+`<p class="muted small num">${r.length} ${r.length===1?'profesional disponible':'profesionales disponibles'}</p>`+r.map(docCard).join('');
 }
+/* ---------- Firma visual ---------- */
+const ROTA=['un médico general','una pediatra','un dermatólogo','una psicóloga','un dentista','una ginecóloga','una nutrióloga','un cardiólogo'];
+function rotaHero(){const el=document.getElementById('rota'); if(!el||document.hidden||sinMovimiento()) return;
+  el.classList.add('sale'); setTimeout(()=>{S._rota=((S._rota||0)+1)%ROTA.length; el.textContent=ROTA[S._rota]; el.classList.remove('sale'); el.classList.add('entra'); setTimeout(()=>el.classList.remove('entra'),450)},270)}
+setInterval(rotaHero,2600);
+const ESP_IC={
+  'Todas':['#0B7D91','<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>'],
+  'Medicina General':['#0E8A7E','<path d="M6 3v6a4 4 0 0 0 8 0V3"/><path d="M10 13v2a5 5 0 0 0 10 0v-2"/><circle cx="20" cy="11" r="2"/>'],
+  'Cardiología':['#E0526B','<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/><path d="M7.5 12h2.5l1.5-2.5 1.8 4.5 1.4-2H17"/>'],
+  'Dermatología':['#D9822B','<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/><path d="M9.5 15a2.5 2.5 0 0 0 2.5 2.5"/>'],
+  'Pediatría':['#3D8FE0','<circle cx="12" cy="12.5" r="8"/><path d="M9.5 15a3.5 3.5 0 0 0 5 0"/><path d="M9.3 11h.01M14.7 11h.01" stroke-width="2.6"/><path d="M12 4.5c-1 1.5 0 2.5 1 2"/>'],
+  'Ginecología':['#C054B4','<circle cx="12" cy="9" r="5"/><path d="M12 14v7M9 18h6"/>'],
+  'Odontología':['#1F9E91','<path d="M7 3.5C4.5 3.5 3.5 5.5 3.5 8c0 3 1.5 4 2 7 .4 2.5 1 5.5 2.5 5.5s1.5-3 2-5c.3-1.2 1.7-1.2 2 0 .5 2 .5 5 2 5s2.1-3 2.5-5.5c.5-3 2-4 2-7 0-2.5-1-4.5-3.5-4.5-2 0-3 1-5 1s-3-1-5-1z"/>'],
+  'Psicología':['#7563DB','<path d="M20 11.5a7.5 6.5 0 0 1-11 5.7L4 19l1.4-4A6.5 6.5 0 1 1 20 11.5z"/><path d="M12 14s-3-1.8-3-3.6a1.5 1.5 0 0 1 3-.6 1.5 1.5 0 0 1 3 .6c0 1.8-3 3.6-3 3.6z"/>'],
+  'Nutrición':['#479A3F','<path d="M12 7.5c-2-1.5-6.5-1-6.5 4 0 4 3 9 6.5 8 3.5 1 6.5-4 6.5-8 0-5-4.5-5.5-6.5-4z"/><path d="M12 7.5c0-2 1-3.5 3-4.5"/>'],
+  'Oftalmología':['#2F80C4','<path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="3"/>'],
+  'Traumatología y Ortopedia':['#8A7560','<path d="M7.5 16.5l9-9"/><circle cx="5.5" cy="16" r="2"/><circle cx="8" cy="18.5" r="2"/><circle cx="16" cy="5.5" r="2"/><circle cx="18.5" cy="8" r="2"/>'],
+  'Otorrinolaringología':['#CF6F35','<path d="M7 9a5 5 0 0 1 10 0c0 3-3 4-3 6.5A3 3 0 0 1 8.5 17"/><path d="M10 9.5a2 2 0 0 1 4 0c0 1-1 1.5-1.5 2"/>'],
+  'Endocrinología':['#B08B1E','<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/><path d="M7.5 15h9"/>'],
+  'Gastroenterología':['#C9644A','<rect x="2.5" y="8.5" width="19" height="7" rx="3.5" transform="rotate(-45 12 12)"/><path d="M9.5 9.5l5 5"/>'],
+  'Neurología':['#6A57D2','<path d="M13 3L5 13h6l-1 8 8-10h-6l1-8z"/>'],
+  'Psiquiatría':['#5767C4','<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>'],
+  'Urología':['#2F93A9','<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/><path d="M12 11v6M9 14h6"/>']
+};
+const ESP_CORTO={'Medicina General':'General','Traumatología y Ortopedia':'Traumatología','Otorrinolaringología':'Otorrino','Gastroenterología':'Gastro','Endocrinología':'Endocrino'};
+function espChip(e){const [c,ic]=ESP_IC[e]||ESP_IC['Medicina General'];
+  return `<button class="chip esp-chip" style="--c:${c}" data-act="esp" data-v="${esc(e)}" aria-pressed="${S.f.esp===e}" aria-label="${esc(e)}"><span class="esp-ic"><svg viewBox="0 0 24 24" aria-hidden="true">${ic}</svg></span><span>${esc(ESP_CORTO[e]||e)}</span></button>`}
 function viewDescubrir(){
   const n=esInvitado()?'':(S.perfil.nombre||'').split(' ')[0];
   const prox=citasProximas()[0];
-  return `<section class="hero"><span class="logo-wm" aria-hidden="true"></span><div class="stack" style="gap:4px;position:relative"><p>Hola${n?', '+esc(n):''}</p><h1>¿Con quién quieres consultarte?</h1><p class="hero-sub">Encuentra a tu especialista, compara precios y opiniones, y agenda en minutos.</p></div>
+  return `<section class="hero"><span class="logo-wm" aria-hidden="true"></span><div class="stack" style="gap:4px;position:relative"><p>Hola${n?', '+esc(n):''}</p><h1 aria-label="Agenda tu cita con tu especialista">Agenda tu cita con <span class="rota" id="rota" aria-hidden="true">${sinMovimiento()?'tu especialista':ROTA[S._rota||0]}</span></h1><p class="hero-sub">Encuentra a tu especialista, compara precios y opiniones, y agenda en minutos.</p></div>
     <div class="search" style="position:relative">${I.search}<input class="input" id="q" type="search" placeholder="Síntoma, especialidad o nombre" value="${esc(S.f.q)}" aria-label="Buscar profesional"></div>
     <ul class="hero-side" aria-label="Por qué Health Digital"><li>${I.verified}<span><b>Cédula verificada</b>Revisamos cada cédula ante la SEP</span></li><li>${I.cal}<span><b>Agenda en 1 minuto</b>Horarios reales, sin llamadas</span></li><li>${I.lock}<span><b>Datos protegidos</b>Tus citas solo las ven tú y tu médico</span></li></ul></section>
   ${prox?`<button class="card row" data-act="tab" data-v="citas" style="text-align:left;background:var(--brand-soft);border-color:transparent">
@@ -1390,7 +1437,7 @@ function viewDescubrir(){
     <button data-act="tab" data-v="membresia"><span class="li-ic">${I.card}</span><b>${S.perfil.plan?'Mi credencial':'Membresía'}</b><small>${S.perfil.plan?'Lista para usar':!ventaOn()?'Próximamente':'Desde '+money(precioPlan('individual'))+'/mes'}</small></button>
   </div>
   <div class="desc-layout"><aside class="filtros-lado" aria-label="Filtros"><h3 class="solo-pc">Especialidad</h3>
-  <div class="chips" role="group" aria-label="Especialidad">${especialidades().map(e=>`<button class="chip" data-act="esp" data-v="${esc(e)}" aria-pressed="${S.f.esp===e}">${esc(e)}</button>`).join('')}</div>
+  <div class="chips esp-row" role="group" aria-label="Especialidad">${especialidades().map(espChip).join('')}</div>
   <h3 class="solo-pc">Disponibilidad y filtros</h3>
   <div class="filters">
     <button class="fpill" data-act="disp" data-v="hoy" aria-pressed="${S.f.disp==='hoy'}">Hoy</button>
