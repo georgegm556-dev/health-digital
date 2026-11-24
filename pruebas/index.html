@@ -1232,7 +1232,7 @@ function renderPie(){const f=$('#pie'); if(!f) return;
     <div class="pie-marca"><div class="brand"><span class="logo-iso" style="width:36px;height:32px"></span><span class="wordmark">Health Digital</span></div>
       <p class="small muted">Encuentra médicos con cédula verificada, agenda en minutos y cuida tu salud con contenido hecho por profesionales.</p></div>
     <div class="pie-col"><b>Pacientes</b><button data-act="tab" data-v="descubrir">Buscar médico</button><button data-act="soloVideo">Videoconsulta</button><button data-act="tab" data-v="citas">Mis citas</button><button data-act="tab" data-v="membresia">Membresía</button></div>
-    <div class="pie-col"><b>Salud</b><button data-act="tab" data-v="salud">Artículos gratis</button><button data-act="tab" data-v="salud">E-books y programas</button><button data-act="tab" data-v="servicios">Laboratorios y estudios</button></div>
+    <div class="pie-col"><b>Bienestar</b><button data-act="tab" data-v="salud">Artículos gratis</button><button data-act="tab" data-v="salud">E-books y programas</button><button data-act="tab" data-v="servicios">Laboratorios y estudios</button></div>
     <div class="pie-col"><b>Médicos</b>${sb?'<button data-act="crearCuenta" data-v="medico">Registrarme como médico</button>':'<button data-act="portal">Portal médico</button>'}<span class="small muted">Sin mensualidad · 10% por consulta atendida</span></div>
     <div class="pie-col"><b>Health Digital</b><button data-act="aviso">Aviso de privacidad</button><span class="small muted">Tus datos viajan cifrados</span></div>
   </div><div class="pie-legal small muted">© ${new Date().getFullYear()} Health Digital · La información de la plataforma no sustituye la consulta médica.</div>`}
@@ -1244,7 +1244,7 @@ function renderNav(){
   $('#navIn').style.setProperty('--cols','4');
   const prox=citasProximas().length;
   // Laboratorios y Membresía se abren desde Inicio y Perfil; el menú queda en 4 para que sea fácil a cualquier edad.
-  const items=[['descubrir','Inicio',I.discover],['salud','Salud',I.leaf],['citas','Citas',I.cal],['perfil','Perfil',I.user]];
+  const items=[['descubrir','Inicio',I.discover],['salud','Bienestar',I.leaf],['citas','Citas',I.cal],['perfil','Perfil',I.user]];
   const activo=S.tab==='servicios'?'descubrir':S.tab==='membresia'?'perfil':S.tab;
   $('#navIn').innerHTML=items.map(([k,l,ic])=>`<button data-act="tab" data-v="${k}" ${activo===k?'aria-current="page"':''}><span class="nav-ic">${ic}${k==='citas'&&prox?`<span class="badge-dot num">${prox}</span>`:''}</span>${l}</button>`).join('');
 }
@@ -1461,7 +1461,7 @@ function viewDescubrir(){
 // Laboratorios y Membresía son subpáginas: llevan botón para regresar y responden al botón "atrás" del celular.
 const SUBPAG=['servicios','membresia'];
 function volverHTML(){const a=S.volverA&&!SUBPAG.includes(S.volverA)?S.volverA:'descubrir';
-  const t={descubrir:'Inicio',perfil:'Perfil',salud:'Salud',citas:'Citas'}[a]||'Inicio';
+  const t={descubrir:'Inicio',perfil:'Perfil',salud:'Bienestar',citas:'Citas'}[a]||'Inicio';
   return `<button class="volver" data-act="volver" aria-label="Regresar a ${t}">${I.back}<span>${t}</span></button>`}
 addEventListener('popstate',()=>{if(S._subPush&&SUBPAG.includes(S.tab)){S._subPush=false; S.tab=S.volverA&&!SUBPAG.includes(S.volverA)?S.volverA:'descubrir'; closeSheet(); render(); window.scrollTo(0,0)}});
 function viewServicios(){
@@ -1793,7 +1793,7 @@ function filtrarSalud(){const {cat,target,q}=S.sal; const t=(q||'').trim().toLow
   return {ebooks:EBOOKS.filter(e=>ok(e)&&(!target||e.target.includes(target))), arts:ARTICULOS.filter(a=>ok(a)&&!target)}}
 function viewSalud(){
   S.sal=S.sal||{cat:'todo',target:'',q:''}; const {ebooks,arts}=filtrarSalud(); const packs=S.sal.cat==='todo'&&!S.sal.target&&!S.sal.q;
-  return `<section class="hero salud-hero"><span class="logo-wm" aria-hidden="true"></span><div class="stack" style="gap:4px;position:relative"><p>Aprende a cuidarte</p><h1>Salud y nutrición</h1><p>Artículos gratis, guías y programas para comer mejor, moverte más y sentirte bien.</p></div>
+  return `<section class="hero salud-hero"><span class="logo-wm" aria-hidden="true"></span><div class="stack" style="gap:4px;position:relative"><p>Aprende a cuidarte</p><h1>Bienestar</h1><p>Artículos gratis, guías y programas para comer mejor, moverte más y sentirte bien.</p></div>
     <div class="search" style="position:relative">${I.search}<input class="input" id="salq" type="search" placeholder="Ej. diabetes, ansiedad, rutina en casa" value="${esc(S.sal.q)}" aria-label="Buscar en salud y nutrición"></div></section>
   <div class="chips" role="group" aria-label="Tema"><button class="chip" data-act="salcat" data-v="todo" aria-pressed="${S.sal.cat==='todo'}">Todo</button>${SALUD_CATS.map(c=>`<button class="chip" data-act="salcat" data-v="${c.id}" aria-pressed="${S.sal.cat===c.id}">${esc(c.n)}</button>`).join('')}</div>
   <div class="filters"><select class="input ${S.sal.target?'on':''}" id="sal-target" aria-label="Para quién"><option value="">Para todos</option>${SALUD_TARGETS.map(x=>`<option ${S.sal.target===x?'selected':''}>${esc(x)}</option>`).join('')}</select></div>
