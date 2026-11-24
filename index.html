@@ -552,6 +552,38 @@ svg.chev{width:18px;height:18px;flex:none;color:var(--muted)}
 .plan.gratis{background:var(--surface-2);box-shadow:none}
 :where(.planes){display:grid;gap:14px}
 @media (min-width:1100px) and (hover:hover) and (pointer:fine){.planes:has(.gratis){grid-template-columns:repeat(3,minmax(0,1fr))}}
+/* ===== Movimiento: aparición suave, respuesta al tocar y pasos ===== */
+:root{--ease-out:cubic-bezier(.2,.75,.25,1);--ease-pop:cubic-bezier(.34,1.45,.55,1)}
+@keyframes aparece{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes funde{from{opacity:0}to{opacity:1}}
+@keyframes paso{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+@keyframes pop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.08);opacity:1}100%{transform:scale(1)}}
+@keyframes traza{from{stroke-dashoffset:40}to{stroke-dashoffset:0}}
+@keyframes baja{from{opacity:0;transform:translate(-50%,-10px) scale(.96)}to{opacity:1;transform:translate(-50%,0)}}
+@keyframes brillo{to{background-position:-200% 0}}
+.rv{opacity:0}
+.rv-in{animation:aparece .5s var(--ease-out) both;animation-delay:var(--d,0ms)}
+.sheet-wrap{animation:funde .2s ease-out}
+.paso-in{animation:paso .32s var(--ease-out) both}
+.hero-ok .ring{animation:pop .5s var(--ease-pop) both .05s}
+.hero-ok .ring svg path,.hero-ok .ring svg polyline{stroke-dasharray:40;animation:traza .45s ease-out both .35s}
+.hero-ok h2,.hero-ok p{animation:aparece .45s var(--ease-out) both .2s}
+.toast{animation:baja .28s var(--ease-out) both}
+.btn,.chip,.fpill,.day,.slot,nav button,.quick-acts button,.card[data-act],.doc{transition:transform .14s ease,box-shadow .2s ease,background-color .2s ease,border-color .2s ease,color .2s ease}
+.btn:active:not(:disabled),.chip:active,.fpill:active,.day:active,.slot:active,.quick-acts button:active{transform:scale(.96)}
+nav button:active .nav-ic{transform:scale(.9)}
+.nav-ic{transition:background-color .25s ease,transform .14s ease}
+nav button[aria-current="page"] .nav-ic svg{animation:pop .35s var(--ease-pop)}
+.esqueleto{border-radius:var(--r-m);min-height:150px;background:linear-gradient(90deg,var(--surface-2) 0%,var(--surface) 40%,var(--surface-2) 80%);background-size:200% 100%;animation:brillo 1.3s linear infinite}
+@media (hover:hover) and (pointer:fine){
+  #results .doc:hover,.plan:hover,.quick-acts button:hover,.recom-list button:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(10,40,45,.12)}
+}
+@media (prefers-reduced-motion:reduce){
+  .rv{opacity:1}.rv-in,.paso-in,.sheet-wrap,.toast,.hero-ok .ring,.hero-ok h2,.hero-ok p,.esqueleto,nav button[aria-current="page"] .nav-ic svg{animation:none!important}
+  .hero-ok .ring svg path,.hero-ok .ring svg polyline{stroke-dasharray:none}
+  .btn:active,.chip:active,.fpill:active,.day:active,.slot:active,.quick-acts button:active{transform:none}
+  #results .doc:hover,.plan:hover,.quick-acts button:hover,.recom-list button:hover{transform:none}
+}
 </style>
 
 <div class="app">
@@ -1129,19 +1161,37 @@ function start(store){
 }
 
 /* ============ Render principal ============ */
+/* ---------- Aparición de contenido ---------- */
+const sinMovimiento=()=>window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+const PIEZAS='.hero,.quick-acts>*,.section-head,#results>*,.card,.plan,.cita,.doc,.planes>*,.recom-list>*,section.stack>h3,.kv';
+let obsRv=null;
+function animaVista(raiz){
+  if(!raiz||sinMovimiento()) return;
+  const todas=[...raiz.querySelectorAll(PIEZAS)]; const set=new Set(todas);
+  const piezas=todas.filter(el=>{let p=el.parentElement; while(p&&p!==raiz){if(set.has(p)) return false; p=p.parentElement} return el.offsetParent!==null});
+  const alto=innerHeight; let i=0;
+  if(!obsRv&&'IntersectionObserver' in window) obsRv=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){const el=e.target; el.style.setProperty('--d','0ms'); el.classList.add('rv-in'); obsRv.unobserve(el)}}),{rootMargin:'0px 0px -24px 0px'});
+  for(const el of piezas){
+    const r=el.getBoundingClientRect(); el.classList.add('rv');
+    if(r.top<alto){el.style.setProperty('--d',Math.min(i++,10)*55+'ms'); el.classList.add('rv-in')}
+    else if(obsRv) obsRv.observe(el); else el.classList.add('rv-in');
+    el.addEventListener('animationend',()=>{el.classList.remove('rv','rv-in'); el.style.removeProperty('--d')},{once:true});
+  }
+}
+function animaSiCambia(soft){const k=(S.rol||'')+'|'+(S.pantalla||'')+'|'+S.tab; if(soft&&S._vistaAnim===k) return; if(S._vistaAnim===k&&!soft) return; S._vistaAnim=k; requestAnimationFrame(()=>animaVista($('#view')))}
 function render(soft){
   if(!S.ready) return;
   const v=$('#view'); renderCuentaBtn(); renderPie();
   if(S.rol==='medico'){
-    if(!S.miDoc){$('#nav').hidden=true; if(!soft||!v.querySelector('#donb')) v.innerHTML=viewDocOnboarding(); return}
+    if(!S.miDoc){$('#nav').hidden=true; if(!soft||!v.querySelector('#donb')){v.innerHTML=viewDocOnboarding(); animaSiCambia(false)} return}
     $('#nav').hidden=false; renderNav();
     if(soft&&S.tab==='perfilmed'&&v.querySelector('#dForm')) return;
     const mm={agenda:viewDocAgenda,pagosmed:viewDocPagos,perfilmed:viewDocPerfil}; const y=window.scrollY;
-    v.innerHTML=(mm[S.tab]||viewDocAgenda)(); if(S.tab==='perfilmed') dibujaQRMed(); if(soft) window.scrollTo(0,y); return;
+    v.innerHTML=(mm[S.tab]||viewDocAgenda)(); if(S.tab==='perfilmed') dibujaQRMed(); if(soft) window.scrollTo(0,y); animaSiCambia(soft); return;
   }
   renderCuentaBtn();
-  if(S.pantalla==='auth'){$('#nav').hidden=true; if(!soft||!v.querySelector('#authForm')) v.innerHTML=viewAuth(); return}
-  if(!S.perfil||S.pantalla==='onb'){$('#nav').hidden=true; if(!soft||!v.querySelector('#onb')) v.innerHTML=viewOnboarding(); return}
+  if(S.pantalla==='auth'){$('#nav').hidden=true; if(!soft||!v.querySelector('#authForm')){v.innerHTML=viewAuth(); animaSiCambia(false)} return}
+  if(!S.perfil||S.pantalla==='onb'){$('#nav').hidden=true; if(!soft||!v.querySelector('#onb')){v.innerHTML=viewOnboarding(); animaSiCambia(false)} return}
   $('#nav').hidden=false; renderNav(); if(S.abrirDoc) setTimeout(abrirEnlace,0);
   if(soft && S.tab==='descubrir' && v.querySelector('#results')){$('#results').innerHTML=resultsHTML();document.querySelectorAll('.fpill').forEach(b=>{const a=b.dataset.act;b.setAttribute('aria-pressed',a==='favFiltro'?S.f.fav:S.f.disp===b.dataset.v);if(a==='favFiltro')b.innerHTML=heart(S.f.fav)+' Favoritos'});return}
   const map={descubrir:viewDescubrir,salud:viewSalud,servicios:viewServicios,citas:viewCitas,membresia:viewMembresia,perfil:viewPerfil};
@@ -1149,6 +1199,7 @@ function render(soft){
   v.innerHTML=map[S.tab]();
   if(S.tab==='membresia') drawQR();
   if(soft) window.scrollTo(0,keepScroll);
+  animaSiCambia(soft);
 }
 function renderPie(){const f=$('#pie'); if(!f) return;
   if(S.rol==='medico'){f.innerHTML='';return}
@@ -2034,6 +2085,7 @@ function renderSheet(){
   const fn={ebook:sheetEbook,compra:sheetCompra,articulo:sheetArticulo,terminosMed:sheetTerminosMed,doctor:sheetDoctor,plan:sheetPlan,miembro:sheetMiembro,perfil:sheetPerfil,seguros:sheetSeguros,notif:sheetNotif,aviso:sheetAviso,borrar:sheetBorrar,opinar:sheetOpinar,portal:sheetPortal}[s.type];
   $('#sheetRoot').innerHTML=fn(s);
   if(same){const sh=document.querySelector('.sheet');if(sh)sh.style.animation='none';$('#sheetBody').scrollTop=y}
+  else if(prev){const sh=document.querySelector('.sheet'),w=document.querySelector('.sheet-wrap'),b=$('#sheetBody');if(sh)sh.style.animation='none';if(w)w.style.animation='none';if(b&&!sinMovimiento())b.classList.add('paso-in')}
   if(s.type==='doctor'&&s.paso==='elegir'&&!same){const el=document.querySelector('.day[aria-pressed="true"]');el&&el.parentElement&&(el.parentElement.scrollLeft=el.offsetLeft-el.parentElement.offsetLeft-8)}
 }
 function updDocFoot(){const s=S.sheet,d=docById(s.id);const b=$('#ctaDoc');if(b)b.disabled=!s.hora;const l=document.querySelector('.sheet-foot .grow .small');if(l)l.textContent=s.hora?relDia(s.fecha)+' · '+s.hora:'Elige un horario'}
